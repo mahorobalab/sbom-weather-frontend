@@ -61,7 +61,8 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         packageName: 'sample/pkg',
         affectedVersion: '< 1.0.1',
         fixedVersion: '1.0.1',
-        detectedAt: '2026-10-22'
+        detectedAt: '2026-10-22',
+        description: '軽微なバグ'
       }
     ];
     expect(calculateWeatherStatus(vulns, 1)).toBe('cloudy');
@@ -77,7 +78,8 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         packageName: 'sample/pkg',
         affectedVersion: '< 2.0.0',
         fixedVersion: '2.0.0',
-        detectedAt: '2026-10-22'
+        detectedAt: '2026-10-22',
+        description: 'XSSの脆弱性'
       }
     ];
     expect(calculateWeatherStatus(vulns, 2)).toBe('rain');
@@ -93,7 +95,8 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         packageName: 'php',
         affectedVersion: '< 8.2.25',
         fixedVersion: '8.2.25',
-        detectedAt: '2026-10-21'
+        detectedAt: '2026-10-21',
+        description: '未認証RCE'
       }
     ];
     expect(calculateWeatherStatus(vulns, 1)).toBe('thunderstorm');
@@ -109,7 +112,8 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         packageName: 'php',
         affectedVersion: '< 8.2.25',
         fixedVersion: '8.2.25',
-        detectedAt: '2026-10-14'
+        detectedAt: '2026-10-14',
+        description: '未認証RCE放置'
       }
     ];
     expect(calculateWeatherStatus(vulns, 8)).toBe('typhoon');

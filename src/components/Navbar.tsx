@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, ChevronDown, LayoutDashboard, Globe, Users } from 'lucide-react';
 import type { ProjectSite } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavbarProps {
   sites: ProjectSite[];
@@ -17,6 +18,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentTab,
   onSelectTab
 }) => {
+  const { currentUser, signInWithGoogle, signOut } = useAuth();
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3 shadow-xs">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
@@ -98,15 +100,41 @@ export const Navbar: React.FC<NavbarProps> = ({
             <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* User Avatar */}
+          {/* User Auth Profile */}
           <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center text-white text-xs font-bold shadow-xs">
-              前
-            </div>
-            <div className="hidden sm:block text-left">
-              <div className="text-xs font-semibold text-slate-800">前田 慎吾</div>
-              <div className="text-[10px] text-slate-500">Pro プラン</div>
-            </div>
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                {currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt={currentUser.displayName || 'ユーザー'}
+                    className="w-8 h-8 rounded-full border border-slate-200 shadow-xs object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center text-white text-xs font-bold shadow-xs">
+                    {(currentUser.displayName || currentUser.email || 'U').substring(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div className="hidden sm:block text-left">
+                  <div className="text-xs font-semibold text-slate-800 truncate max-w-[120px]">
+                    {currentUser.displayName || currentUser.email?.split('@')[0]}
+                  </div>
+                  <button
+                    onClick={() => signOut()}
+                    className="text-[10px] text-slate-400 hover:text-rose-600 font-medium transition-colors block cursor-pointer"
+                  >
+                    ログアウト
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => signInWithGoogle()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-98 cursor-pointer"
+              >
+                <span>ログイン</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
