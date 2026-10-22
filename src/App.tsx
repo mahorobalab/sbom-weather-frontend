@@ -78,7 +78,7 @@ export default function App() {
       ecosystem: newSiteData.ecosystem || 'wordpress',
       syncMethod: newSiteData.syncMethod || 'wp_plugin',
       isVerified: false,
-      verificationToken: newSiteData.verificationToken || 'ninja-site-verification=abc',
+      verificationToken: newSiteData.verificationToken || `token_${Math.random().toString(36).substring(2, 14)}`,
       currentWeather: 'sunny',
       lastScannedAt: t('dashboard.unscanned'),
       daysUnresolved: 0,
@@ -95,6 +95,13 @@ export default function App() {
     };
     setSites([newSite, ...sites]);
     setCurrentSiteId(newSite.id);
+  };
+
+  // Verify site ownership
+  const handleVerifySite = (siteId: string) => {
+    setSites((prev) =>
+      prev.map((s) => (s.id === siteId ? { ...s, isVerified: true } : s))
+    );
   };
 
   // Add / remove team members
@@ -178,7 +185,11 @@ export default function App() {
         )}
 
         {currentTab === 'sites' && (
-          <SiteManagement sites={sites} onAddSite={handleAddSite} />
+          <SiteManagement
+            sites={sites}
+            onAddSite={handleAddSite}
+            onVerifySite={handleVerifySite}
+          />
         )}
 
         {currentTab === 'users' && (
