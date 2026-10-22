@@ -20,49 +20,31 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
     setIsDragging(false);
   };
 
-  const processFileContent = (content: string, fileName: string) => {
+  const processFileContent = async (content: string, fileName: string) => {
     try {
       setParseError(null);
       setCurrentFileName(fileName);
       const json = JSON.parse(content);
 
       const parsedDeps: Dependency[] = [];
-      let foundVuln = false;
+      let ecosystem = 'composer';
 
       // Composer.lock の場合
       if (json.packages || json['packages-dev']) {
+        ecosystem = 'composer';
         const allPkgs = [...(json.packages || []), ...(json['packages-dev'] || [])];
         allPkgs.forEach((pkg: any) => {
-          const isPhpTarget = pkg.name === 'php' || pkg.name?.includes('php');
-          // 簡易シミュレーション: php 8.2系などの脆弱性判定
-          const hasVuln = isPhpTarget && pkg.version?.startsWith('8.2');
-
-          if (hasVuln) foundVuln = true;
-
           parsedDeps.push({
             name: pkg.name,
             version: pkg.version || 'unknown',
             ecosystem: 'composer',
-            vulnerabilities: hasVuln
-              ? [
-                  {
-                    id: 'CVE-2026-109618',
-                    title: 'php2shell: 未認証リモートコード実行 (RCE)',
-                    severity: 'CRITICAL',
-                    cvss: 9.2,
-                    packageName: pkg.name,
-                    affectedVersion: '< 8.2.25',
-                    fixedVersion: '8.2.25 / 8.3.13',
-                    detectedAt: '2026-10-21 23:05',
-                    description: '入力パラメータ検証不備によるリモートコード実行の脆弱性。'
-                  }
-                ]
-              : []
+            vulnerabilities: []
           });
         });
       }
       // package-lock.json の場合
       else if (json.packages || json.dependencies) {
+        ecosystem = 'npm';
         const pkgs = json.packages || {};
         Object.entries(pkgs).forEach(([key, val]: [string, any]) => {
           if (!key || key === '') return;
@@ -77,6 +59,64 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       } else {
         throw new Error('未対応のファイル形式です。composer.lock または package-lock.json を指定してください。');
       }
+
+      // バックエンドAPI (/api/v1/sync) への突合リクエスト
+      try {
+        const response = await fetch('/api/v1/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            packages: parsedDeps.map(d => ({ name: d.name, version: d.version, ecosystem: d.ecosystem })),
+            ecosystem
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.alerts && result.alerts.length > 0) {
+            // アラートを対応するパッケージにマッピング
+            result.alerts.forEach((alert: any) => {
+              const matchedDep = parsedDeps.find(d => d.name.toLowerCase() === alert.packageName.toLowerCase());
+              if (matchedDep) {
+                matchedDep.vulnerabilities.push({
+                  id: alert.cve_id,
+                  title: alert.title,
+                  severity: alert.severity,
+                  cvss: alert.cvss,
+                  packageName: alert.packageName,
+                  affectedVersion: `< ${alert.fixedVersion}`,
+                  fixedVersion: alert.fixedVersion,
+                  detectedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  description: alert.description
+                });
+              }
+            });
+            onFileParsed(fileName, parsedDeps, true);
+            return;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Backend sync API failed or offline, falling back to local simulation:', apiErr);
+      }
+
+      // フォールバック: php 8.2系の簡易判定
+      let foundVuln = false;
+      parsedDeps.forEach(dep => {
+        if ((dep.name === 'php' || dep.name.includes('php')) && dep.version.startsWith('8.2')) {
+          foundVuln = true;
+          dep.vulnerabilities.push({
+            id: 'CVE-2026-109618',
+            title: 'php2shell: 未認証リモートコード実行 (RCE)',
+            severity: 'CRITICAL',
+            cvss: 9.2,
+            packageName: dep.name,
+            affectedVersion: '< 8.2.25',
+            fixedVersion: '8.2.25 / 8.3.13',
+            detectedAt: '2026-10-21 23:05',
+            description: '入力パラメータ検証不備によるリモートコード実行の脆弱性。'
+          });
+        }
+      });
 
       onFileParsed(fileName, parsedDeps, foundVuln);
     } catch (err: any) {

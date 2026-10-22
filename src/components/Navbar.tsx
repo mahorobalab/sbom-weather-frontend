@@ -28,13 +28,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
-                <span>SBOM Ninja</span>
+                <span>SBOM Weather</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
                   BETA
                 </span>
               </div>
               <div className="text-[10px] text-slate-400 font-sans -mt-0.5">
-                脆弱性お天気ダッシュボード
+                脆弱性セキュリティお天気予報
               </div>
             </div>
           </div>
