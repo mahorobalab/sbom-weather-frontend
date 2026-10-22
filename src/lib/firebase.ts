@@ -8,7 +8,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
-  // Analytics は使用しないため除外
+  // Analytics is unused and omitted
   // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || '',
 };
 

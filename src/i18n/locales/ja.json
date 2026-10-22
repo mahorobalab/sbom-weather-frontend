@@ -1,0 +1,198 @@
+{
+  "common": {
+    "appName": "SBOM Weather",
+    "tagline": "脆弱性スキャナー",
+    "beta": "BETA",
+    "loading": "読み込み中...",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる",
+    "copy": "コピー",
+    "copied": "コピー完了",
+    "logout": "ログアウト",
+    "login": "ログイン",
+    "today": "今日",
+    "auto": "Auto",
+    "english": "English",
+    "japanese": "日本語",
+    "language": "言語"
+  },
+  "navbar": {
+    "dashboardTab": "お天気予報",
+    "sitesTab": "サイト管理",
+    "usersTab": "チーム権限",
+    "logoutConfirmTitle": "ログアウトの確認",
+    "logoutConfirmMessage": "アカウント（{{identifier}}）からログアウトしますか？",
+    "logoutConfirmButton": "ログアウトする",
+    "userFallback": "ユーザー"
+  },
+  "dashboard": {
+    "syncMethod": "連携方式: {{method}}",
+    "refreshScan": "今すぐ最新DBと照合",
+    "scanning": "脆弱性DB照合中...",
+    "lastScannedJustNow": "たった今 (手動アップロード)",
+    "unscanned": "未スキャン"
+  },
+  "weather": {
+    "sunny": {
+      "label": "快晴（安全）",
+      "headline": "本日は快晴！セキュリティに異常はありません",
+      "description": "検出された脆弱性は0件です。外部からの既知の脅威はなく、システムは安全稼働しています。",
+      "subText": "最終スキャン: {{time}} (自動巡回済)"
+    },
+    "cloudy": {
+      "label": "曇り（要注意）",
+      "headline": "うす曇り：軽微なアップデートが公開されています",
+      "description": "重大な脅威ではありませんが、マイナーなバグ修正や非クリティカルな更新が届いています。",
+      "subText": "最終スキャン: {{time}}"
+    },
+    "rain": {
+      "label": "雨（注意報）",
+      "headline": "雨模様：中程度の脆弱性が検出されました",
+      "description": "条件付きで影響を受ける脆弱性が確認されています。次回の定期メンテナンスでの対応を推奨します。",
+      "subText": "検出から {{days}} 日経過"
+    },
+    "thunderstorm": {
+      "label": "雷雨（緊急警報）",
+      "headline": "雷雨警報発令！極めて深刻な脆弱性を検知",
+      "description": "認証なしで外部攻撃が成立する重大な脆弱性（CVSS 9.0+）が含まれています。大至急パッチを適用してください！",
+      "subText": "2026/10/21 深夜公開の緊急パッチ対象"
+    },
+    "typhoon": {
+      "label": "台風（放置警戒）",
+      "headline": "台風直撃！重大な脆弱性が長期間放置されています",
+      "description": "重大な脆弱性が未対応のまま {{days}} 日以上経過しています。攻撃コードが出回っており、即座に相談先または保守ベンダーへ連絡してください。",
+      "subText": "損害賠償・サービス停止の致命的リスクがあります"
+    },
+    "openPdfButton": "相談用PDF診断書を出力",
+    "advisorBadge": "外注先・社内SEに見せるだけで相談可能"
+  },
+  "forecast": {
+    "title": "週間セキュリティ予報（直近7日間の推移）",
+    "note": "※ 放置期間が長引くと「雨」から「雷雨」「台風」へ悪化します",
+    "clean": "異常なし",
+    "cveCount": "CVE: {{count}}件",
+    "days": {
+      "mon": "月",
+      "tue": "火",
+      "wed": "水",
+      "thu": "木",
+      "fri": "金",
+      "sat": "土",
+      "sun": "日",
+      "today": "今日"
+    },
+    "summaries": {
+      "safe": "安全・異常なし",
+      "sunny": "快晴・異常なし",
+      "cleanSystem": "本日も快晴：システムは万全です",
+      "registered": "登録完了：快晴",
+      "patchAlert": "深夜23:00 緊急パッチ公開 (CVSS 9.2)",
+      "stormAlert": "大雨警報発令中：早急なパッチ適用が必要",
+      "daysElapsed": "未対応 {{days}}日経過",
+      "typhoonArrival": "放置 7日到達 (台風化)",
+      "typhoonHit": "台風直撃：直ちに保守ベンダーへ相談を！",
+      "uploadVulnerable": "アップロード解析により緊急脆弱性を検知！",
+      "uploadSafe": "アップロード解析：異常なし（安全）"
+    }
+  },
+  "dropzone": {
+    "title": "即座にロックファイルをドラッグ＆ドロップ解析",
+    "subtitle": "ソースコードは一切預かりません。パッケージ名とバージョンのみを安全にエッジ解析します。",
+    "trySample": "お試しテスト:",
+    "phpSample": "⚡ PHP脆弱性サンプル (雷雨)",
+    "npmSample": "☀️ 安全なNodeサンプル (快晴)",
+    "dropInstruction": "ここに composer.lock または package-lock.json をドロップ",
+    "dropInstructionOr": "または クリックしてファイルを選択",
+    "unsupportedFormat": "未対応のファイル形式です。composer.lock または package-lock.json を指定してください。",
+    "jsonParseError": "JSONの解析に失敗しました。",
+    "analysisComplete": "解析完了: {{fileName}}",
+    "phpVulnerableSampleName": "composer.lock (PHP 8.2脆弱性再現サンプル)",
+    "cleanNpmSampleName": "package-lock.json (安全なクリーンサンプル)"
+  },
+  "table": {
+    "title": "構成パッケージ & 脆弱性診断結果",
+    "detectedCount": "検出されたパッケージ数: {{count}} 件",
+    "packageName": "パッケージ名",
+    "currentVersion": "現在バージョン",
+    "status": "ステータス",
+    "cveIdentifier": "CVE識別子 / CVSS",
+    "recommendation": "推奨対応・安全版",
+    "statusDanger": "危険 ({{severity}})",
+    "statusSafe": "安全",
+    "updateTo": "{{version}} へ更新",
+    "upToDate": "最新またはパッチ適用済",
+    "noVulnDash": "—"
+  },
+  "sites": {
+    "title": "監視対象サイト管理",
+    "subtitle": "現在登録中のサイト一覧およびサーバー所有権の確認状態",
+    "addNewSite": "新しいサイトを追加",
+    "registerNewSite": "新しい監視対象サイトの登録",
+    "siteNameLabel": "サイト表示名",
+    "siteNamePlaceholder": "例: コーポレートサイト",
+    "siteUrlLabel": "サイトURL",
+    "envTypeLabel": "技術環境 / 連携種別",
+    "envWp": "WordPress (専用プラグイン / 外部スキャン)",
+    "envComposer": "PHP (Composer / GitHub Actions)",
+    "envNpm": "Node.js (npm / GitHub Actions)",
+    "submitRegister": "登録して認証タグを発行",
+    "ownershipVerified": "所有権確認済",
+    "ownershipRequired": "所有権の確認が必要",
+    "copyMetaTagTitle": "所有権確認用タグをコピー",
+    "defaultNewSiteName": "新規サイト"
+  },
+  "users": {
+    "title": "チームメンバー / 権限管理",
+    "subtitle": "ダッシュボードへのアクセス権限および通知を受け取るユーザー",
+    "inviteMember": "メンバーを招待",
+    "addNewMember": "新しいメンバーの追加",
+    "nameLabel": "氏名 / 担当名",
+    "namePlaceholder": "例: 山田 太郎",
+    "emailLabel": "メールアドレス",
+    "roleLabel": "権限ロール",
+    "roleViewer": "閲覧専用 (Viewer: PDF出力・ステータス確認のみ)",
+    "roleAdmin": "管理者 (Admin: サイト追加・設定変更可能)",
+    "addButton": "追加",
+    "addedDate": "追加日: {{date}}",
+    "removeMemberTitle": "メンバーを削除"
+  },
+  "report": {
+    "previewTitle": "相談用 A4 脆弱性診断報告書プレビュー",
+    "printButton": "印刷 / PDFとして保存",
+    "reportHeader": "SBOM Ninja Security Assessment Report",
+    "reportTitle": "ソフトウェア部品・脆弱性診断報告書",
+    "reportSub": "※外部保守ベンダー・開発会社への改修相談・見積もり提示用資料",
+    "issueDate": "診断発行日: {{date}}",
+    "targetSite": "対象サイト: {{name}}",
+    "overallResult": "総合判定: ",
+    "dangerResult": "要緊急対応（検出脆弱性 {{count}} 件）",
+    "safeResult": "安全稼働（既知脆弱性 0件）",
+    "dangerSummary": "2026/10/21公開のPHP重大脆弱性等、早急なパッチ適用を要する脆弱性が検出されています。",
+    "safeSummary": "現時点で主要な既知の脆弱性は検知されていません。定期的な監視を継続してください。",
+    "vulnListTitle": "■ 検出された重大脆弱性一覧",
+    "affectedPackage": "対象パッケージ: ",
+    "currentVer": "現在バージョン: ",
+    "recommendedVer": "推奨修正版: ",
+    "vendorAdviceTitle": "■ 相談先・保守ベンダー様への依頼事項",
+    "vendorAdviceBody": "本報告書は、SBOM Ninja エッジ監視エンジンによって自動生成された一次診断結果です。上記パッケージの対象バージョンへのアップデート可否（デグレード・後方互換性テスト）の検証および、安全なパッチ適用作業のお見積もり・スケジュール調整をご依頼申し上げます。",
+    "generatedBy": "Generated by SBOM Weather (https://sbom-ninja.com)",
+    "disclaimer": "※本診断結果は公開脆弱性情報に基づくものであり、完全性を保証するものではありません。"
+  },
+  "footer": {
+    "tagline": "— ソフトウェア脆弱性お天気予報",
+    "poweredBy": "Cloudflare Workers & D1 & KV Powered • 高速エッジ照合"
+  },
+  "mock": {
+    "site1Name": "ECモール受発注システム (Laravel 10)",
+    "site2Name": "FC店舗受発注バックエンド (レガシーWP)",
+    "site3Name": "マーケティングLP (Vite + React)",
+    "vulnPhpTitle": "php2shell: 未認証リモートコード実行 (RCE)",
+    "vulnPhpDesc": "特定のURLパラメータ処理におけるバッファオーバーフロー。認証なしでサーバー権限を奪取可能。",
+    "vulnWpTitle": "WordPress Core SQLインジェクション脆弱性",
+    "vulnWpDesc": "10日以上未対応のまま放置されています。外部からDBの直接改ざんを受ける危険があります。",
+    "member1Name": "前田 慎吾 (あなた)",
+    "member2Name": "佐藤 社内SE",
+    "member3Name": "外部保守パートナー (SIer)"
+  }
+}

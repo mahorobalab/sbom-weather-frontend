@@ -1,0 +1,198 @@
+{
+  "common": {
+    "appName": "SBOM Weather",
+    "tagline": "Security Scanner",
+    "beta": "BETA",
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied",
+    "logout": "Log Out",
+    "login": "Sign In",
+    "today": "Today",
+    "auto": "Auto",
+    "english": "English",
+    "japanese": "日本語",
+    "language": "Language"
+  },
+  "navbar": {
+    "dashboardTab": "Weather Forecast",
+    "sitesTab": "Site Management",
+    "usersTab": "Team Permissions",
+    "logoutConfirmTitle": "Confirm Logout",
+    "logoutConfirmMessage": "Are you sure you want to log out from account ({{identifier}})?",
+    "logoutConfirmButton": "Log Out",
+    "userFallback": "User"
+  },
+  "dashboard": {
+    "syncMethod": "Sync Method: {{method}}",
+    "refreshScan": "Verify with Latest DB",
+    "scanning": "Comparing Vulnerability DB...",
+    "lastScannedJustNow": "Just now (manual upload)",
+    "unscanned": "Unscanned"
+  },
+  "weather": {
+    "sunny": {
+      "label": "Sunny (Safe)",
+      "headline": "Clear skies today! No security anomalies detected",
+      "description": "Zero vulnerabilities detected. No known external threats exist; system is operating safely.",
+      "subText": "Last scan: {{time}} (Auto-patrolled)"
+    },
+    "cloudy": {
+      "label": "Cloudy (Caution)",
+      "headline": "Slightly overcast: Minor updates have been published",
+      "description": "Not a major threat, but minor bug fixes and non-critical updates are available.",
+      "subText": "Last scan: {{time}}"
+    },
+    "rain": {
+      "label": "Rain (Advisory)",
+      "headline": "Rainy: Moderate vulnerabilities detected",
+      "description": "Conditionally exploitable vulnerabilities identified. Resolution in next scheduled maintenance recommended.",
+      "subText": "{{days}} days elapsed since detection"
+    },
+    "thunderstorm": {
+      "label": "Thunderstorm (Emergency Warning)",
+      "headline": "Thunderstorm Warning! Critical vulnerabilities detected",
+      "description": "Contains severe vulnerabilities (CVSS 9.0+) allowing unauthenticated external attacks. Apply patches immediately!",
+      "subText": "Subject to emergency patch released late night 2026/10/21"
+    },
+    "typhoon": {
+      "label": "Typhoon (Unresolved Alert)",
+      "headline": "Direct Typhoon Hit! Severe vulnerabilities left unpatched",
+      "description": "Severe vulnerabilities remain unaddressed for {{days}}+ days. Exploit code is circulating; consult your maintenance vendor immediately.",
+      "subText": "Fatal risk of damages and service interruption"
+    },
+    "openPdfButton": "Export Consultation PDF Report",
+    "advisorBadge": "Ready to share directly with your SE or contractor for advice"
+  },
+  "forecast": {
+    "title": "Weekly Security Forecast (7-Day Trend)",
+    "note": "※ If unaddressed, conditions degrade from 'Rain' to 'Thunderstorm' and 'Typhoon'",
+    "clean": "No anomalies",
+    "cveCount": "CVE: {{count}}",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun",
+      "today": "Today"
+    },
+    "summaries": {
+      "safe": "Safe, no anomalies",
+      "sunny": "Clear skies, no anomalies",
+      "cleanSystem": "Clear skies today: System in optimal health",
+      "registered": "Registration complete: Clear skies",
+      "patchAlert": "Late night 23:00 Emergency patch released (CVSS 9.2)",
+      "stormAlert": "Heavy rain warning in effect: Urgent patch required",
+      "daysElapsed": "Unaddressed: {{days}} days elapsed",
+      "typhoonArrival": "Unaddressed: 7 days reached (Degraded to Typhoon)",
+      "typhoonHit": "Direct typhoon hit: Consult your maintenance vendor immediately!",
+      "uploadVulnerable": "Upload analysis: Emergency vulnerability detected!",
+      "uploadSafe": "Upload analysis: No anomalies (safe)"
+    }
+  },
+  "dropzone": {
+    "title": "Drag & Drop Lockfile for Instant Analysis",
+    "subtitle": "We never store your source code. Only package names and versions are safely analyzed at the edge.",
+    "trySample": "Try Samples:",
+    "phpSample": "⚡ PHP Vulnerability Sample (Thunderstorm)",
+    "npmSample": "☀️ Clean Node Sample (Sunny)",
+    "dropInstruction": "Drop composer.lock or package-lock.json here",
+    "dropInstructionOr": "or click to select file",
+    "unsupportedFormat": "Unsupported file format. Please provide composer.lock or package-lock.json.",
+    "jsonParseError": "Failed to parse JSON.",
+    "analysisComplete": "Analysis complete: {{fileName}}",
+    "phpVulnerableSampleName": "composer.lock (PHP 8.2 vulnerability reproduction sample)",
+    "cleanNpmSampleName": "package-lock.json (Safe clean sample)"
+  },
+  "table": {
+    "title": "Components & Vulnerability Assessment Results",
+    "detectedCount": "Detected Packages: {{count}}",
+    "packageName": "Package Name",
+    "currentVersion": "Current Version",
+    "status": "Status",
+    "cveIdentifier": "CVE ID / CVSS",
+    "recommendation": "Recommended Action / Safe Version",
+    "statusDanger": "Danger ({{severity}})",
+    "statusSafe": "Safe",
+    "updateTo": "Update to {{version}}",
+    "upToDate": "Up to date or patched",
+    "noVulnDash": "—"
+  },
+  "sites": {
+    "title": "Monitored Sites Management",
+    "subtitle": "List of registered sites and server ownership verification status",
+    "addNewSite": "Add New Site",
+    "registerNewSite": "Register New Monitored Site",
+    "siteNameLabel": "Site Display Name",
+    "siteNamePlaceholder": "e.g. Corporate Portal",
+    "siteUrlLabel": "Site URL",
+    "envTypeLabel": "Tech Environment / Integration",
+    "envWp": "WordPress (Dedicated Plugin / External Scan)",
+    "envComposer": "PHP (Composer / GitHub Actions)",
+    "envNpm": "Node.js (npm / GitHub Actions)",
+    "submitRegister": "Register & Generate Verification Tag",
+    "ownershipVerified": "Ownership Verified",
+    "ownershipRequired": "Verification Required",
+    "copyMetaTagTitle": "Copy ownership verification meta tag",
+    "defaultNewSiteName": "New Site"
+  },
+  "users": {
+    "title": "Team Members & Permissions",
+    "subtitle": "Dashboard access permissions and notification recipient users",
+    "inviteMember": "Invite Member",
+    "addNewMember": "Add New Member",
+    "nameLabel": "Full Name / Role",
+    "namePlaceholder": "e.g. John Doe",
+    "emailLabel": "Email Address",
+    "roleLabel": "Permission Role",
+    "roleViewer": "Viewer (PDF export and status inspection only)",
+    "roleAdmin": "Admin (Site addition and settings management)",
+    "addButton": "Add",
+    "addedDate": "Added: {{date}}",
+    "removeMemberTitle": "Remove member"
+  },
+  "report": {
+    "previewTitle": "Consultation A4 Vulnerability Diagnostic Report Preview",
+    "printButton": "Print / Save as PDF",
+    "reportHeader": "SBOM Ninja Security Assessment Report",
+    "reportTitle": "Software Components & Vulnerability Diagnostic Report",
+    "reportSub": "※ Reference document for contractor/vendor repair consultation and quotes",
+    "issueDate": "Issue Date: {{date}}",
+    "targetSite": "Target Site: {{name}}",
+    "overallResult": "Overall Assessment: ",
+    "dangerResult": "Urgent Action Required ({{count}} vulnerabilities detected)",
+    "safeResult": "Operating Safely (0 known vulnerabilities)",
+    "dangerSummary": "Critical vulnerabilities such as the PHP zero-day disclosed 2026/10/21 require immediate patch application.",
+    "safeSummary": "No major known vulnerabilities currently detected. Continue routine monitoring.",
+    "vulnListTitle": "■ Detected Critical Vulnerabilities",
+    "affectedPackage": "Target Package: ",
+    "currentVer": "Current Version: ",
+    "recommendedVer": "Recommended Version: ",
+    "vendorAdviceTitle": "■ Request for External Contractor / Maintenance Vendor",
+    "vendorAdviceBody": "This report contains preliminary diagnostic results automatically generated by the SBOM Ninja edge monitoring engine. Please verify update feasibility (regression/backwards compatibility testing) for the affected packages above, and provide an estimate and schedule for safe patch application.",
+    "generatedBy": "Generated by SBOM Weather (https://sbom-ninja.com)",
+    "disclaimer": "※ This diagnostic result is based on publicly disclosed vulnerability databases and does not guarantee absolute security."
+  },
+  "footer": {
+    "tagline": "— Software Vulnerability Weather Forecast",
+    "poweredBy": "Cloudflare Workers & D1 & KV Powered • High-speed Edge Verification"
+  },
+  "mock": {
+    "site1Name": "EC Mall Order System (Laravel 10)",
+    "site2Name": "Franchise Store Order Backend (Legacy WP)",
+    "site3Name": "Marketing Landing Page (Vite + React)",
+    "vulnPhpTitle": "php2shell: Unauthenticated Remote Code Execution (RCE)",
+    "vulnPhpDesc": "Buffer overflow in specific URL parameter processing. Attackers can seize server privileges without authentication.",
+    "vulnWpTitle": "WordPress Core SQL Injection Vulnerability",
+    "vulnWpDesc": "Left unaddressed for over 10 days. High risk of direct database tampering from external sources.",
+    "member1Name": "Shingo Maeda (You)",
+    "member2Name": "Sato (Internal SE)",
+    "member3Name": "External Maintenance Partner (SIer)"
+  }
+}

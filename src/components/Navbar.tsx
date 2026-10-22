@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Shield, ChevronDown, LayoutDashboard, Globe, Users, LogOut } from 'lucide-react';
+import { Shield, ChevronDown, LayoutDashboard, Server, Users, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ProjectSite } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface NavbarProps {
   sites: ProjectSite[];
@@ -16,8 +18,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentSite,
   onSelectSite,
   currentTab,
-  onSelectTab
+  onSelectTab,
 }) => {
+  const { t } = useTranslation();
   const { currentUser, signInWithGoogle, signOut } = useAuth();
   const [imageError, setImageError] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -43,13 +46,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <div>
                 <div className="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-1.5">
-                  <span>SBOM Weather</span>
+                  <span>{t('common.appName')}</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-600 border border-indigo-200 font-mono font-medium">
-                    BETA
+                    {t('common.beta')}
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-500 font-sans -mt-0.5">
-                  脆弱性セキュリティお天気予報
+                  {t('common.tagline')}
                 </div>
               </div>
             </div>
@@ -65,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>お天気予報</span>
+                <span>{t('navbar.dashboardTab')}</span>
               </button>
               <button
                 onClick={() => onSelectTab('sites')}
@@ -75,8 +78,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'text-slate-600 hover:text-slate-900 font-medium'
                 }`}
               >
-                <Globe className="w-3.5 h-3.5" />
-                <span>サイト管理</span>
+                <Server className="w-3.5 h-3.5" />
+                <span>{t('navbar.sitesTab')}</span>
               </button>
               <button
                 onClick={() => onSelectTab('users')}
@@ -87,12 +90,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>チーム権限</span>
+                <span>{t('navbar.usersTab')}</span>
               </button>
             </nav>
           </div>
 
-          {/* Site Switcher & User Profile */}
+          {/* Site Switcher, Language Switcher & User Profile */}
           <div className="flex items-center gap-3">
             {/* Site Selector Dropdown */}
             <div className="relative">
@@ -113,6 +116,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
+            {/* Language Switcher with Globe Icon (placed next to login) */}
+            <LanguageSwitcher />
+
             {/* User Auth Profile */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
               {currentUser ? (
@@ -120,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {currentUser.photoURL && !imageError ? (
                     <img
                       src={currentUser.photoURL}
-                      alt={currentUser.displayName || 'ユーザー'}
+                      alt={currentUser.displayName || t('navbar.userFallback')}
                       referrerPolicy="no-referrer"
                       onError={() => setImageError(true)}
                       className="w-8 h-8 rounded-full border border-slate-200 shadow-xs object-cover bg-slate-100"
@@ -138,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={() => setShowLogoutConfirm(true)}
                       className="text-[10px] text-slate-400 hover:text-rose-600 font-medium transition-colors block cursor-pointer"
                     >
-                      ログアウト
+                      {t('common.logout')}
                     </button>
                   </div>
                 </div>
@@ -147,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => signInWithGoogle()}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-98 cursor-pointer"
                 >
-                  <span>ログイン</span>
+                  <span>{t('common.login')}</span>
                 </button>
               )}
             </div>
@@ -155,29 +161,31 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* ログアウト確認ダイアログ */}
+      {/* Logout confirmation dialog */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="relative w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-xl p-6 text-center animate-in fade-in zoom-in-95 duration-150">
             <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 shadow-2xs">
               <LogOut className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">ログアウトの確認</h3>
+            <h3 className="text-base font-bold text-slate-900 mb-1">{t('navbar.logoutConfirmTitle')}</h3>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-              アカウント（{currentUser?.email || currentUser?.displayName}）からログアウトしますか？
+              {t('navbar.logoutConfirmMessage', {
+                identifier: currentUser?.email || currentUser?.displayName || t('navbar.userFallback'),
+              })}
             </p>
             <div className="flex items-center justify-center gap-2.5">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
                 className="flex-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
               >
-                キャンセル
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirmLogout}
                 className="flex-1 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
               >
-                ログアウトする
+                {t('navbar.logoutConfirmButton')}
               </button>
             </div>
           </div>

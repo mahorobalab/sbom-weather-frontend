@@ -3,7 +3,8 @@ import type { ProjectSite, TeamMember } from './types';
 export const INITIAL_PROJECTS: ProjectSite[] = [
   {
     id: 'proj-laravel-ec',
-    name: 'ECモール受発注システム (Laravel 10)',
+    name: 'EC Mall Order System (Laravel 10)',
+    nameKey: 'mock.site1Name',
     url: 'https://ec-orders.example.com',
     ecosystem: 'composer',
     syncMethod: 'actions',
@@ -20,14 +21,17 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
         vulnerabilities: [
           {
             id: 'CVE-2026-109618',
-            title: 'php2shell: 未認証リモートコード実行 (RCE)',
+            title: 'php2shell: Unauthenticated Remote Code Execution (RCE)',
+            titleKey: 'mock.vulnPhpTitle',
             severity: 'CRITICAL',
             cvss: 9.2,
             packageName: 'php',
             affectedVersion: '< 8.2.25',
             fixedVersion: '8.2.25 / 8.3.13',
             detectedAt: '2026-10-21 23:05',
-            description: '特定のURLパラメータ処理におけるバッファオーバーフロー。認証なしでサーバー権限を奪取可能。'
+            description:
+              'Buffer overflow in specific URL parameter processing. Attackers can seize server privileges without authentication.',
+            descriptionKey: 'mock.vulnPhpDesc'
           }
         ]
       },
@@ -45,18 +49,19 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
       }
     ],
     forecast: [
-      { date: '10/16', dayLabel: '木', weather: 'sunny', summary: '安全・異常なし', vulnerabilityCount: 0 },
-      { date: '10/17', dayLabel: '金', weather: 'sunny', summary: '安全・異常なし', vulnerabilityCount: 0 },
-      { date: '10/18', dayLabel: '土', weather: 'sunny', summary: '安全・異常なし', vulnerabilityCount: 0 },
-      { date: '10/19', dayLabel: '日', weather: 'sunny', summary: '安全・異常なし', vulnerabilityCount: 0 },
-      { date: '10/20', dayLabel: '月', weather: 'sunny', summary: '安全・異常なし', vulnerabilityCount: 0 },
-      { date: '10/21', dayLabel: '火', weather: 'thunderstorm', summary: '深夜23:00 緊急パッチ公開 (CVSS 9.2)', vulnerabilityCount: 1 },
-      { date: '10/22', dayLabel: '今日', weather: 'thunderstorm', summary: '大雨警報発令中：早急なパッチ適用が必要', vulnerabilityCount: 1 }
+      { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'thunderstorm', summary: 'Late night 23:00 Emergency patch released (CVSS 9.2)', summaryKey: 'forecast.summaries.patchAlert', vulnerabilityCount: 1 },
+      { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'thunderstorm', summary: 'Heavy rain warning in effect: Urgent patch required', summaryKey: 'forecast.summaries.stormAlert', vulnerabilityCount: 1 }
     ]
   },
   {
     id: 'proj-legacy-hanko',
-    name: 'FC店舗受発注バックエンド (レガシーWP)',
+    name: 'Franchise Store Order Backend (Legacy WP)',
+    nameKey: 'mock.site2Name',
     url: 'https://hanko-fc-backend.local',
     ecosystem: 'wordpress',
     syncMethod: 'wp_plugin',
@@ -73,14 +78,17 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
         vulnerabilities: [
           {
             id: 'CVE-2026-8812',
-            title: 'WordPress Core SQLインジェクション脆弱性',
+            title: 'WordPress Core SQL Injection Vulnerability',
+            titleKey: 'mock.vulnWpTitle',
             severity: 'HIGH',
             cvss: 8.5,
             packageName: 'wordpress-core',
             affectedVersion: '< 6.5.4',
             fixedVersion: '6.5.4',
             detectedAt: '2026-10-10 14:00',
-            description: '10日以上未対応のまま放置されています。外部からDBの直接改ざんを受ける危険があります。'
+            description:
+              'Left unaddressed for over 10 days. High risk of direct database tampering from external sources.',
+            descriptionKey: 'mock.vulnWpDesc'
           }
         ]
       },
@@ -92,18 +100,19 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
       }
     ],
     forecast: [
-      { date: '10/16', dayLabel: '木', weather: 'rain', summary: '未対応 6日経過', vulnerabilityCount: 1 },
-      { date: '10/17', dayLabel: '金', weather: 'typhoon', summary: '放置 7日到達 (台風化)', vulnerabilityCount: 1 },
-      { date: '10/18', dayLabel: '土', weather: 'typhoon', summary: '放置 8日経過', vulnerabilityCount: 1 },
-      { date: '10/19', dayLabel: '日', weather: 'typhoon', summary: '放置 9日経過', vulnerabilityCount: 1 },
-      { date: '10/20', dayLabel: '月', weather: 'typhoon', summary: '放置 10日経過', vulnerabilityCount: 1 },
-      { date: '10/21', dayLabel: '火', weather: 'typhoon', summary: '放置 11日経過', vulnerabilityCount: 1 },
-      { date: '10/22', dayLabel: '今日', weather: 'typhoon', summary: '台風直撃：直ちに保守ベンダーへ相談を！', vulnerabilityCount: 1 }
+      { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'rain', summary: 'Unaddressed 6 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 6 }, vulnerabilityCount: 1 },
+      { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'typhoon', summary: 'Unaddressed 7 days reached (Degraded to Typhoon)', summaryKey: 'forecast.summaries.typhoonArrival', vulnerabilityCount: 1 },
+      { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'typhoon', summary: 'Unaddressed 8 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 8 }, vulnerabilityCount: 1 },
+      { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'typhoon', summary: 'Unaddressed 9 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 9 }, vulnerabilityCount: 1 },
+      { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'typhoon', summary: 'Unaddressed 10 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 10 }, vulnerabilityCount: 1 },
+      { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'typhoon', summary: 'Unaddressed 11 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 11 }, vulnerabilityCount: 1 },
+      { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'typhoon', summary: 'Direct typhoon hit: Consult your maintenance vendor immediately!', summaryKey: 'forecast.summaries.typhoonHit', vulnerabilityCount: 1 }
     ]
   },
   {
     id: 'proj-modern-app',
-    name: 'マーケティングLP (Vite + React)',
+    name: 'Marketing Landing Page (Vite + React)',
+    nameKey: 'mock.site3Name',
     url: 'https://ninja-landing.dev',
     ecosystem: 'npm',
     syncMethod: 'actions',
@@ -118,19 +127,19 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
       { name: 'tailwindcss', version: '3.4.14', ecosystem: 'npm', vulnerabilities: [] }
     ],
     forecast: [
-      { date: '10/16', dayLabel: '木', weather: 'sunny', summary: '快晴・異常なし', vulnerabilityCount: 0 },
-      { date: '10/17', dayLabel: '金', weather: 'sunny', summary: '快晴・異常なし', vulnerabilityCount: 0 },
-      { date: '10/18', dayLabel: '土', weather: 'sunny', summary: '快晴・異常なし', vulnerabilityCount: 0 },
-      { date: '10/19', dayLabel: '日', weather: 'sunny', summary: '快晴・異常なし', vulnerabilityCount: 0 },
-      { date: '10/20', dayLabel: '月', weather: 'sunny', summary: '快晴・異常なし', vulnerabilityCount: 0 },
-      { date: '10/21', dayLabel: '火', weather: 'sunny', summary: '快晴・異常なし', vulnerabilityCount: 0 },
-      { date: '10/22', dayLabel: '今日', weather: 'sunny', summary: '本日も快晴：システムは万全です', vulnerabilityCount: 0 }
+      { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'sunny', summary: 'Clear skies today: System in optimal health', summaryKey: 'forecast.summaries.cleanSystem', vulnerabilityCount: 0 }
     ]
   }
 ];
 
 export const INITIAL_MEMBERS: TeamMember[] = [
-  { id: 'm-1', name: '前田 慎吾 (あなた)', email: 'maeda@example.com', role: 'owner', addedAt: '2026-10-01' },
-  { id: 'm-2', name: '佐藤 社内SE', email: 'sato@example.com', role: 'admin', addedAt: '2026-10-15' },
-  { id: 'm-3', name: '外部保守パートナー (SIer)', email: 'partner@sier-tech.jp', role: 'viewer', addedAt: '2026-10-21' }
+  { id: 'm-1', name: 'Shingo Maeda (You)', nameKey: 'mock.member1Name', email: 'maeda@example.com', role: 'owner', addedAt: '2026-10-01' },
+  { id: 'm-2', name: 'Sato (Internal SE)', nameKey: 'mock.member2Name', email: 'sato@example.com', role: 'admin', addedAt: '2026-10-15' },
+  { id: 'm-3', name: 'External Maintenance Partner (SIer)', nameKey: 'mock.member3Name', email: 'partner@sier-tech.jp', role: 'viewer', addedAt: '2026-10-21' }
 ];

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UploadCloud, FileCode, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Dependency } from '../types';
 
 interface DropZoneProps {
@@ -7,6 +8,7 @@ interface DropZoneProps {
 }
 
 export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
+  const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       const parsedDeps: Dependency[] = [];
       let ecosystem = 'composer';
 
-      // Composer.lock の場合
+      // Parse Composer.lock format
       if (json.packages || json['packages-dev']) {
         ecosystem = 'composer';
         const allPkgs = [...(json.packages || []), ...(json['packages-dev'] || [])];
@@ -42,7 +44,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           });
         });
       }
-      // package-lock.json の場合
+      // Parse package-lock.json format
       else if (json.packages || json.dependencies) {
         ecosystem = 'npm';
         const pkgs = json.packages || {};
@@ -57,16 +59,16 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           });
         });
       } else {
-        throw new Error('未対応のファイル形式です。composer.lock または package-lock.json を指定してください。');
+        throw new Error(t('dropzone.unsupportedFormat'));
       }
 
-      // バックエンドAPI (/api/v1/sync) への突合リクエスト
+      // Backend API sync request (/api/v1/sync)
       try {
         const response = await fetch('/api/v1/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            packages: parsedDeps.map(d => ({ name: d.name, version: d.version, ecosystem: d.ecosystem })),
+            packages: parsedDeps.map((d) => ({ name: d.name, version: d.version, ecosystem: d.ecosystem })),
             ecosystem
           })
         });
@@ -74,9 +76,9 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         if (response.ok) {
           const result = await response.json();
           if (result.alerts && result.alerts.length > 0) {
-            // アラートを対応するパッケージにマッピング
+            // Map returned alerts to matching packages
             result.alerts.forEach((alert: any) => {
-              const matchedDep = parsedDeps.find(d => d.name.toLowerCase() === alert.packageName.toLowerCase());
+              const matchedDep = parsedDeps.find((d) => d.name.toLowerCase() === alert.packageName.toLowerCase());
               if (matchedDep) {
                 matchedDep.vulnerabilities.push({
                   id: alert.cve_id,
@@ -99,28 +101,28 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         console.warn('Backend sync API failed or offline, falling back to local simulation:', apiErr);
       }
 
-      // フォールバック: php 8.2系の簡易判定
+      // Fallback: simulated detection for PHP 8.2 series
       let foundVuln = false;
-      parsedDeps.forEach(dep => {
+      parsedDeps.forEach((dep) => {
         if ((dep.name === 'php' || dep.name.includes('php')) && dep.version.startsWith('8.2')) {
           foundVuln = true;
           dep.vulnerabilities.push({
             id: 'CVE-2026-109618',
-            title: 'php2shell: 未認証リモートコード実行 (RCE)',
+            title: t('mock.vulnPhpTitle'),
             severity: 'CRITICAL',
             cvss: 9.2,
             packageName: dep.name,
             affectedVersion: '< 8.2.25',
             fixedVersion: '8.2.25 / 8.3.13',
             detectedAt: '2026-10-21 23:05',
-            description: '入力パラメータ検証不備によるリモートコード実行の脆弱性。'
+            description: t('mock.vulnPhpDesc')
           });
         }
       });
 
       onFileParsed(fileName, parsedDeps, foundVuln);
     } catch (err: any) {
-      setParseError(err.message || 'JSONの解析に失敗しました。');
+      setParseError(err.message || t('dropzone.jsonParseError'));
     }
   };
 
@@ -151,7 +153,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
     reader.readAsText(file);
   };
 
-  // サンプルデモデータ即座ロード
+  // Instant sample loading for testing
   const loadSample = (type: 'php_vulnerable' | 'clean_npm') => {
     if (type === 'php_vulnerable') {
       const sampleComposer = JSON.stringify({
@@ -162,7 +164,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           { name: 'guzzlehttp/guzzle', version: '7.8.1' }
         ]
       });
-      processFileContent(sampleComposer, 'composer.lock (PHP 8.2脆弱性再現サンプル)');
+      processFileContent(sampleComposer, t('dropzone.phpVulnerableSampleName'));
     } else {
       const sampleNpm = JSON.stringify({
         packages: {
@@ -172,7 +174,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           'node_modules/tailwindcss': { version: '3.4.14' }
         }
       });
-      processFileContent(sampleNpm, 'package-lock.json (安全なクリーンサンプル)');
+      processFileContent(sampleNpm, t('dropzone.cleanNpmSampleName'));
     }
   };
 
@@ -182,27 +184,27 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <UploadCloud className="w-5 h-5 text-indigo-600" />
-            <span>即座にロックファイルをドラッグ＆ドロップ解析</span>
+            <span>{t('dropzone.title')}</span>
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            ソースコードは一切預かりません。パッケージ名とバージョンのみを安全にエッジ解析します。
+            {t('dropzone.subtitle')}
           </p>
         </div>
 
         {/* Demo buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs text-slate-500">お試しテスト:</span>
+          <span className="text-xs text-slate-500">{t('dropzone.trySample')}</span>
           <button
             onClick={() => loadSample('php_vulnerable')}
             className="text-xs px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition-all font-medium cursor-pointer shadow-2xs"
           >
-            ⚡ PHP脆弱性サンプル (雷雨)
+            {t('dropzone.phpSample')}
           </button>
           <button
             onClick={() => loadSample('clean_npm')}
             className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 transition-all font-medium cursor-pointer shadow-2xs"
           >
-            ☀️ 安全なNodeサンプル (快晴)
+            {t('dropzone.npmSample')}
           </button>
         </div>
       </div>
@@ -229,10 +231,9 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
             <FileCode className="w-6 h-6" />
           </div>
           <p className="text-sm font-medium text-slate-700">
-            ここに <span className="text-indigo-600 font-semibold font-mono">composer.lock</span> または{' '}
-            <span className="text-indigo-600 font-semibold font-mono">package-lock.json</span> をドロップ
+            {t('dropzone.dropInstruction')}
           </p>
-          <p className="text-xs text-slate-500 mt-1">または クリックしてファイルを選択</p>
+          <p className="text-xs text-slate-500 mt-1">{t('dropzone.dropInstructionOr')}</p>
         </label>
       </div>
 
@@ -246,10 +247,9 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       {currentFileName && !parseError && (
         <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
-          <span>解析完了: {currentFileName}</span>
+          <span>{t('dropzone.analysisComplete', { fileName: currentFileName })}</span>
         </div>
       )}
     </div>
   );
 };
-

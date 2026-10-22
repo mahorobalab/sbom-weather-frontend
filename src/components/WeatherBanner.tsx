@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sun, Cloud, CloudRain, CloudLightning, Tornado, AlertTriangle, FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ProjectSite } from '../types';
 
 interface WeatherBannerProps {
@@ -8,58 +9,59 @@ interface WeatherBannerProps {
 }
 
 export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdfReport }) => {
+  const { t } = useTranslation();
   const { currentWeather, daysUnresolved, lastScannedAt } = project;
 
   const weatherConfig = {
     sunny: {
-      label: '快晴（安全）',
+      label: t('weather.sunny.label'),
       icon: Sun,
       iconColor: 'text-amber-500',
       bgGradient: 'from-emerald-50 via-sky-50/30 to-teal-50/40 border-emerald-200/90',
       badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300 font-medium',
-      headline: '本日は快晴！セキュリティに異常はありません',
-      description: '検出された脆弱性は0件です。外部からの既知の脅威はなく、システムは安全稼働しています。',
-      subText: `最終スキャン: ${lastScannedAt} (自動巡回済)`
+      headline: t('weather.sunny.headline'),
+      description: t('weather.sunny.description'),
+      subText: t('weather.sunny.subText', { time: lastScannedAt })
     },
     cloudy: {
-      label: '曇り（要注意）',
+      label: t('weather.cloudy.label'),
       icon: Cloud,
       iconColor: 'text-slate-500',
       bgGradient: 'from-slate-100 via-sky-50/20 to-gray-50 border-slate-300',
       badgeColor: 'bg-slate-200 text-slate-800 border-slate-300 font-medium',
-      headline: 'うす曇り：軽微なアップデートが公開されています',
-      description: '重大な脅威ではありませんが、マイナーなバグ修正や非クリティカルな更新が届いています。',
-      subText: `最終スキャン: ${lastScannedAt}`
+      headline: t('weather.cloudy.headline'),
+      description: t('weather.cloudy.description'),
+      subText: t('weather.cloudy.subText', { time: lastScannedAt })
     },
     rain: {
-      label: '雨（注意報）',
+      label: t('weather.rain.label'),
       icon: CloudRain,
       iconColor: 'text-blue-500',
       bgGradient: 'from-blue-50 via-sky-50/40 to-indigo-50/30 border-blue-200',
       badgeColor: 'bg-blue-100 text-blue-800 border-blue-300 font-medium',
-      headline: '雨模様：中程度の脆弱性が検出されました',
-      description: '条件付きで影響を受ける脆弱性が確認されています。次回の定期メンテナンスでの対応を推奨します。',
-      subText: `検出から ${daysUnresolved} 日経過`
+      headline: t('weather.rain.headline'),
+      description: t('weather.rain.description'),
+      subText: t('weather.rain.subText', { days: daysUnresolved })
     },
     thunderstorm: {
-      label: '雷雨（緊急警報）',
+      label: t('weather.thunderstorm.label'),
       icon: CloudLightning,
       iconColor: 'text-amber-500',
       bgGradient: 'from-amber-50/90 via-rose-50/40 to-orange-50/50 border-amber-300',
       badgeColor: 'bg-rose-100 text-rose-800 border-rose-300 font-semibold animate-pulse',
-      headline: '雷雨警報発令！極めて深刻な脆弱性を検知',
-      description: '認証なしで外部攻撃が成立する重大な脆弱性（CVSS 9.0+）が含まれています。大至急パッチを適用してください！',
-      subText: '2026/10/21 深夜公開の緊急パッチ対象'
+      headline: t('weather.thunderstorm.headline'),
+      description: t('weather.thunderstorm.description'),
+      subText: t('weather.thunderstorm.subText')
     },
     typhoon: {
-      label: '台風（放置警戒）',
+      label: t('weather.typhoon.label'),
       icon: Tornado,
       iconColor: 'text-rose-600',
       bgGradient: 'from-rose-100/80 via-red-50 to-orange-50 border-rose-300',
       badgeColor: 'bg-red-600 text-white font-bold animate-bounce',
-      headline: '台風直撃！重大な脆弱性が長期間放置されています',
-      description: `重大な脆弱性が未対応のまま ${daysUnresolved} 日以上経過しています。攻撃コードが出回っており、即座に相談先または保守ベンダーへ連絡してください。`,
-      subText: '損害賠償・サービス停止の致命的リスクがあります'
+      headline: t('weather.typhoon.headline'),
+      description: t('weather.typhoon.description', { days: daysUnresolved }),
+      subText: t('weather.typhoon.subText')
     }
   }[currentWeather];
 
@@ -106,13 +108,13 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm transition-all shadow-xs hover:shadow-md active:scale-98 cursor-pointer"
           >
             <FileText className="w-4 h-4 text-emerald-400" />
-            <span>相談用PDF診断書を出力</span>
+            <span>{t('weather.openPdfButton')}</span>
           </button>
           
           {currentWeather !== 'sunny' && (
             <div className="flex items-center gap-2 text-xs text-amber-900 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200/90 font-medium">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 text-amber-600" />
-              <span>外注先・社内SEに見せるだけで相談可能</span>
+              <span>{t('weather.advisorBadge')}</span>
             </div>
           )}
         </div>

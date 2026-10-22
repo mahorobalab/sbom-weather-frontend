@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type { Vulnerability, WeatherStatus } from '../types';
 
-// お天気ステータス判定ロジック (テスト対象)
+/**
+ * Weather status evaluation logic (Test Target)
+ */
 export function calculateWeatherStatus(
   vulnerabilities: Vulnerability[],
   daysUnresolved: number
@@ -12,17 +14,17 @@ export function calculateWeatherStatus(
     (v) => v.severity === 'CRITICAL' || v.severity === 'HIGH' || v.cvss >= 7.0
   );
 
-  // 7日以上未対処かつ重大な脆弱性がある場合は「台風」
+  // Severe vulnerabilities unaddressed for 7+ days escalate to "typhoon"
   if (daysUnresolved >= 7 && hasCriticalOrHigh) {
     return 'typhoon';
   }
 
-  // 重大脆弱性があれば「雷雨」
+  // Critical/High severity returns "thunderstorm"
   if (hasCriticalOrHigh) {
     return 'thunderstorm';
   }
 
-  // 中程度脆弱性があれば「雨」
+  // Medium severity returns "rain"
   const hasMedium = vulnerabilities.some((v) => v.severity === 'MEDIUM' || v.cvss >= 4.0);
   if (hasMedium) {
     return 'rain';
@@ -31,7 +33,9 @@ export function calculateWeatherStatus(
   return 'cloudy';
 }
 
-// PURL正規化ヘルパー (テスト対象)
+/**
+ * PURL normalization helper (Test Target)
+ */
 export function normalizeToPurl(ecosystem: string, name: string, version: string): string {
   const cleanVer = version.replace(/^v/, '').trim();
   const safeName = name.trim();
@@ -46,12 +50,12 @@ export function normalizeToPurl(ecosystem: string, name: string, version: string
   return `pkg:composer/${safeName}@${cleanVer}`;
 }
 
-describe('SBOM Weather お天気判定ロジックのテスト', () => {
-  it('脆弱性0件の場合は「快晴 (sunny)」を返すこと', () => {
+describe('SBOM Weather evaluation logic tests', () => {
+  it('should return sunny when there are 0 vulnerabilities', () => {
     expect(calculateWeatherStatus([], 0)).toBe('sunny');
   });
 
-  it('LOWレベルの軽微な警告の場合は「曇り (cloudy)」を返すこと', () => {
+  it('should return cloudy for minor LOW severity warnings', () => {
     const vulns: Vulnerability[] = [
       {
         id: 'CVE-2026-0001',
@@ -62,13 +66,13 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         affectedVersion: '< 1.0.1',
         fixedVersion: '1.0.1',
         detectedAt: '2026-10-22',
-        description: '軽微なバグ'
+        description: 'Minor non-critical bug'
       }
     ];
     expect(calculateWeatherStatus(vulns, 1)).toBe('cloudy');
   });
 
-  it('MEDIUMレベルの脆弱性の場合は「雨 (rain)」を返すこと', () => {
+  it('should return rain for MEDIUM severity vulnerabilities', () => {
     const vulns: Vulnerability[] = [
       {
         id: 'CVE-2026-0002',
@@ -79,30 +83,30 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         affectedVersion: '< 2.0.0',
         fixedVersion: '2.0.0',
         detectedAt: '2026-10-22',
-        description: 'XSSの脆弱性'
+        description: 'XSS vulnerability'
       }
     ];
     expect(calculateWeatherStatus(vulns, 2)).toBe('rain');
   });
 
-  it('php2shellなどCRITICALレベルの場合は「雷雨 (thunderstorm)」を返すこと', () => {
+  it('should return thunderstorm for CRITICAL severity (e.g., php2shell)', () => {
     const vulns: Vulnerability[] = [
       {
         id: 'CVE-2026-109618',
-        title: 'php2shell: 未認証リモートコード実行 (RCE)',
+        title: 'php2shell: Unauthenticated Remote Code Execution (RCE)',
         severity: 'CRITICAL',
         cvss: 9.2,
         packageName: 'php',
         affectedVersion: '< 8.2.25',
         fixedVersion: '8.2.25',
         detectedAt: '2026-10-21',
-        description: '未認証RCE'
+        description: 'Unauthenticated RCE'
       }
     ];
     expect(calculateWeatherStatus(vulns, 1)).toBe('thunderstorm');
   });
 
-  it('CRITICAL/HIGH脆弱性が7日以上放置されている場合は「台風 (typhoon)」へ悪化すること', () => {
+  it('should escalate to typhoon when CRITICAL/HIGH vulnerabilities are left unaddressed for 7+ days', () => {
     const vulns: Vulnerability[] = [
       {
         id: 'CVE-2026-109618',
@@ -113,27 +117,27 @@ describe('SBOM Weather お天気判定ロジックのテスト', () => {
         affectedVersion: '< 8.2.25',
         fixedVersion: '8.2.25',
         detectedAt: '2026-10-14',
-        description: '未認証RCE放置'
+        description: 'Unaddressed RCE left unattended'
       }
     ];
     expect(calculateWeatherStatus(vulns, 8)).toBe('typhoon');
   });
 });
 
-describe('PURL (Package URL) 表記揺れ正規化のテスト', () => {
-  it('ComposerパッケージをPURLへ正しく変換すること', () => {
+describe('PURL (Package URL) normalization tests', () => {
+  it('should properly convert Composer packages to PURL', () => {
     expect(normalizeToPurl('composer', 'laravel/framework', 'v10.35.0')).toBe(
       'pkg:composer/laravel/framework@10.35.0'
     );
   });
 
-  it('npmスコープパッケージ（@付き）を正しくURLエンコードして変換すること', () => {
+  it('should properly URL-encode npm scoped packages with @', () => {
     expect(normalizeToPurl('npm', '@angular/core', 'v16.2.0')).toBe(
       'pkg:npm/%40angular%2Fcore@16.2.0'
     );
   });
 
-  it('WordPressプラグインのスラッグを正しく正規化すること', () => {
+  it('should properly normalize WordPress plugin slugs', () => {
     expect(normalizeToPurl('wordpress', 'contact-form-7', '5.7.0')).toBe(
       'pkg:wordpress/contact-form-7@5.7.0'
     );

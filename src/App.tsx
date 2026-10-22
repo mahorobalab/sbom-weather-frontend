@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navbar } from './components/Navbar';
 import { WeatherBanner } from './components/WeatherBanner';
 import { WeeklyForecast } from './components/WeeklyForecast';
@@ -12,6 +13,7 @@ import type { ProjectSite, TeamMember, Dependency, WeatherStatus } from './types
 import { RefreshCw } from 'lucide-react';
 
 export default function App() {
+  const { t } = useTranslation();
   const [sites, setSites] = useState<ProjectSite[]>(INITIAL_PROJECTS);
   const [currentSiteId, setCurrentSiteId] = useState<string>(INITIAL_PROJECTS[0].id);
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'sites' | 'users'>('dashboard');
@@ -21,7 +23,7 @@ export default function App() {
 
   const currentSite = sites.find((s) => s.id === currentSiteId) || sites[0];
 
-  // ドラッグ＆ドロップでファイルがパースされたときの処理
+  // Handler invoked when a file is parsed through the drag-and-drop zone
   const handleFileParsed = (_fileName: string, parsedDeps: Dependency[], isVulnerable: boolean) => {
     const newWeather: WeatherStatus = isVulnerable ? 'thunderstorm' : 'sunny';
     const updatedForecast = currentSite.forecast.map((f, idx) => {
@@ -29,7 +31,8 @@ export default function App() {
         return {
           ...f,
           weather: newWeather,
-          summary: isVulnerable ? 'アップロード解析により緊急脆弱性を検知！' : 'アップロード解析：異常なし（安全）',
+          summary: isVulnerable ? 'Upload analysis: Emergency vulnerability detected!' : 'Upload analysis: No anomalies (safe)',
+          summaryKey: isVulnerable ? 'forecast.summaries.uploadVulnerable' : 'forecast.summaries.uploadSafe',
           vulnerabilityCount: isVulnerable ? 1 : 0
         };
       }
@@ -42,7 +45,7 @@ export default function App() {
           ? {
               ...s,
               currentWeather: newWeather,
-              lastScannedAt: 'たった今 (手動アップロード)',
+              lastScannedAt: t('dashboard.lastScannedJustNow'),
               dependencies: parsedDeps,
               forecast: updatedForecast
             }
@@ -51,7 +54,7 @@ export default function App() {
     );
   };
 
-  // 手動で再スキャンをシミュレーション
+  // Simulate manual verification scan
   const handleRefreshScan = () => {
     setIsScanning(true);
     setTimeout(() => {
@@ -66,35 +69,35 @@ export default function App() {
     }, 800);
   };
 
-  // サイト追加
+  // Add new monitored site
   const handleAddSite = (newSiteData: Partial<ProjectSite>) => {
     const newSite: ProjectSite = {
       id: `proj-${Date.now()}`,
-      name: newSiteData.name || '新規サイト',
+      name: newSiteData.name || t('sites.defaultNewSiteName'),
       url: newSiteData.url || 'https://example.com',
       ecosystem: newSiteData.ecosystem || 'wordpress',
       syncMethod: newSiteData.syncMethod || 'wp_plugin',
       isVerified: false,
       verificationToken: newSiteData.verificationToken || 'ninja-site-verification=abc',
       currentWeather: 'sunny',
-      lastScannedAt: '未スキャン',
+      lastScannedAt: t('dashboard.unscanned'),
       daysUnresolved: 0,
       dependencies: [],
       forecast: [
-        { date: '10/16', dayLabel: '木', weather: 'sunny', summary: '快晴', vulnerabilityCount: 0 },
-        { date: '10/17', dayLabel: '金', weather: 'sunny', summary: '快晴', vulnerabilityCount: 0 },
-        { date: '10/18', dayLabel: '土', weather: 'sunny', summary: '快晴', vulnerabilityCount: 0 },
-        { date: '10/19', dayLabel: '日', weather: 'sunny', summary: '快晴', vulnerabilityCount: 0 },
-        { date: '10/20', dayLabel: '月', weather: 'sunny', summary: '快晴', vulnerabilityCount: 0 },
-        { date: '10/21', dayLabel: '火', weather: 'sunny', summary: '快晴', vulnerabilityCount: 0 },
-        { date: '10/22', dayLabel: '今日', weather: 'sunny', summary: '登録完了：快晴', vulnerabilityCount: 0 }
+        { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+        { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+        { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+        { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+        { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+        { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+        { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'sunny', summary: 'Registration complete: Clear skies', summaryKey: 'forecast.summaries.registered', vulnerabilityCount: 0 }
       ]
     };
     setSites([newSite, ...sites]);
     setCurrentSiteId(newSite.id);
   };
 
-  // メンバー追加・削除
+  // Add / remove team members
   const handleAddMember = (m: Partial<TeamMember>) => {
     const newMember: TeamMember = {
       id: `m-${Date.now()}`,
@@ -109,6 +112,8 @@ export default function App() {
   const handleRemoveMember = (id: string) => {
     setMembers(members.filter((m) => m.id !== id));
   };
+
+  const siteDisplayName = currentSite.nameKey ? String(t(currentSite.nameKey as any)) : currentSite.name;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
@@ -130,7 +135,7 @@ export default function App() {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">
-                    {currentSite.name}
+                    {siteDisplayName}
                   </h1>
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-medium border border-slate-200 uppercase">
                     {currentSite.ecosystem}
@@ -139,7 +144,7 @@ export default function App() {
                 <div className="flex items-center gap-2 text-xs text-slate-500 font-mono mt-1">
                   <span>{currentSite.url}</span>
                   <span>•</span>
-                  <span>連携方式: {currentSite.syncMethod}</span>
+                  <span>{String(t('dashboard.syncMethod', { method: currentSite.syncMethod }))}</span>
                 </div>
               </div>
 
@@ -150,18 +155,18 @@ export default function App() {
                   className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
-                  <span>{isScanning ? '脆弱性DB照合中...' : '今すぐ最新DBと照合'}</span>
+                  <span>{isScanning ? t('dashboard.scanning') : t('dashboard.refreshScan')}</span>
                 </button>
               </div>
             </div>
 
-            {/* 1. Main Weather Banner (お天気メタファー) */}
+            {/* 1. Main Weather Banner (Weather Metaphor) */}
             <WeatherBanner
               project={currentSite}
               onOpenPdfReport={() => setIsPdfModalOpen(true)}
             />
 
-            {/* 2. Weekly Security Forecast (直近7日間の推移) */}
+            {/* 2. Weekly Security Forecast (7-Day Trend) */}
             <WeeklyForecast forecast={currentSite.forecast} />
 
             {/* 3. Drag & Drop Lockfile Analysis */}
@@ -197,11 +202,11 @@ export default function App() {
       <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">SBOM Weather</span>
-            <span>— ソフトウェア脆弱性お天気予報</span>
+            <span className="font-bold text-slate-800">{t('common.appName')}</span>
+            <span>{t('footer.tagline')}</span>
           </div>
           <div className="text-slate-500">
-            Cloudflare Workers & D1 & KV Powered • 高速エッジ照合
+            {t('footer.poweredBy')}
           </div>
         </div>
       </footer>

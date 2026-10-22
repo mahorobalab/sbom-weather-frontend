@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sun, Cloud, CloudRain, CloudLightning, Tornado } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { DayForecast, WeatherStatus } from '../types';
 
 interface WeeklyForecastProps {
@@ -7,6 +8,8 @@ interface WeeklyForecastProps {
 }
 
 export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ forecast }) => {
+  const { t } = useTranslation();
+
   const getWeatherIcon = (status: WeatherStatus) => {
     switch (status) {
       case 'sunny':
@@ -44,16 +47,19 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ forecast }) => {
     <div className="rounded-2xl bg-white p-5 border border-slate-200/80 shadow-xs">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-          <span>週間セキュリティ予報（直近7日間の推移）</span>
+          <span>{t('forecast.title')}</span>
         </h3>
         <span className="text-xs text-slate-500">
-          ※ 放置期間が長引くと「雨」から「雷雨」「台風」へ悪化します
+          {t('forecast.note')}
         </span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
         {forecast.map((day, index) => {
           const isToday = index === forecast.length - 1;
+          const labelText = day.dayLabelKey ? t(day.dayLabelKey as any) : day.dayLabel;
+          const summaryText = day.summaryKey ? t(day.summaryKey as any, day.summaryParams) : day.summary;
+
           return (
             <div
               key={day.date}
@@ -67,7 +73,7 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ forecast }) => {
                 <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
                   isToday ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {day.dayLabel}
+                  {labelText}
                 </span>
               </div>
 
@@ -76,16 +82,16 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ forecast }) => {
               </div>
 
               <div className="mt-2 w-full">
-                <div className="text-[11px] font-medium truncate text-slate-700" title={day.summary}>
-                  {day.summary}
+                <div className="text-[11px] font-medium truncate text-slate-700" title={summaryText}>
+                  {summaryText}
                 </div>
                 {day.vulnerabilityCount > 0 ? (
                   <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-mono font-medium">
-                    CVE: {day.vulnerabilityCount}件
+                    {t('forecast.cveCount', { count: day.vulnerabilityCount })}
                   </span>
                 ) : (
                   <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium">
-                    異常なし
+                    {t('forecast.clean')}
                   </span>
                 )}
               </div>
