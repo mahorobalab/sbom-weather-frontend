@@ -10,37 +10,40 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ forecast }) => {
   const getWeatherIcon = (status: WeatherStatus) => {
     switch (status) {
       case 'sunny':
-        return <Sun className="w-5 h-5 text-emerald-400" />;
+        return <Sun className="w-5 h-5 text-amber-500 stroke-[2.2]" />;
       case 'cloudy':
-        return <Cloud className="w-5 h-5 text-sky-400" />;
+        return <Cloud className="w-5 h-5 text-slate-400 stroke-[2.2]" />;
       case 'rain':
-        return <CloudRain className="w-5 h-5 text-blue-400" />;
+        return <CloudRain className="w-5 h-5 text-blue-500 stroke-[2.2]" />;
       case 'thunderstorm':
-        return <CloudLightning className="w-5 h-5 text-purple-400 animate-pulse" />;
+        return <CloudLightning className="w-5 h-5 text-amber-500 stroke-[2.2] animate-pulse" />;
       case 'typhoon':
-        return <Tornado className="w-5 h-5 text-rose-400 animate-bounce" />;
+        return <Tornado className="w-5 h-5 text-rose-600 stroke-[2.2] animate-bounce" />;
     }
   };
 
-  const getWeatherBorder = (status: WeatherStatus) => {
+  const getWeatherCardStyle = (status: WeatherStatus, isToday: boolean) => {
+    if (isToday) {
+      return 'bg-white ring-2 ring-indigo-600 border-indigo-200 shadow-md';
+    }
     switch (status) {
       case 'sunny':
-        return 'border-emerald-500/20 bg-emerald-950/10 hover:border-emerald-500/40';
+        return 'bg-white/90 border-slate-200/90 hover:border-emerald-300 hover:bg-emerald-50/20';
       case 'cloudy':
-        return 'border-sky-500/20 bg-sky-950/10 hover:border-sky-500/40';
+        return 'bg-white/90 border-slate-200/90 hover:border-slate-300';
       case 'rain':
-        return 'border-blue-500/30 bg-blue-950/20 hover:border-blue-500/50';
+        return 'bg-white/90 border-slate-200/90 hover:border-blue-300 hover:bg-blue-50/20';
       case 'thunderstorm':
-        return 'border-purple-500/40 bg-purple-950/30 hover:border-purple-500/60 ring-1 ring-purple-500/20';
+        return 'bg-amber-50/40 border-amber-200/90 hover:border-amber-400';
       case 'typhoon':
-        return 'border-rose-500/50 bg-rose-950/40 hover:border-rose-500/80 ring-1 ring-rose-500/30';
+        return 'bg-rose-50/50 border-rose-200/90 hover:border-rose-400';
     }
   };
 
   return (
-    <div className="rounded-2xl glass-panel p-5 border border-slate-800">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+    <div className="rounded-2xl bg-white p-5 border border-slate-200/80 shadow-xs">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
           <span>週間セキュリティ予報（直近7日間の推移）</span>
         </h3>
         <span className="text-xs text-slate-500">
@@ -54,31 +57,34 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ forecast }) => {
           return (
             <div
               key={day.date}
-              className={`flex flex-col items-center justify-between p-3 rounded-xl border transition-all text-center ${getWeatherBorder(
-                day.weather
-              )} ${isToday ? 'bg-slate-800/60 shadow-lg' : ''}`}
+              className={`flex flex-col items-center justify-between p-3 rounded-xl border transition-all text-center ${getWeatherCardStyle(
+                day.weather,
+                isToday
+              )}`}
             >
               <div className="flex items-center gap-1 mb-2">
-                <span className="text-xs font-mono text-slate-400">{day.date}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${isToday ? 'bg-indigo-500/30 text-indigo-300' : 'text-slate-500'}`}>
+                <span className="text-xs font-mono font-medium text-slate-600">{day.date}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                  isToday ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-600'
+                }`}>
                   {day.dayLabel}
                 </span>
               </div>
 
-              <div className="my-1.5 p-2 rounded-lg bg-slate-900/60 border border-white/5">
+              <div className="my-1.5 p-2 rounded-xl bg-slate-50 border border-slate-100 shadow-2xs">
                 {getWeatherIcon(day.weather)}
               </div>
 
               <div className="mt-2 w-full">
-                <div className="text-[11px] font-medium truncate text-slate-300" title={day.summary}>
+                <div className="text-[11px] font-medium truncate text-slate-700" title={day.summary}>
                   {day.summary}
                 </div>
                 {day.vulnerabilityCount > 0 ? (
-                  <span className="inline-block mt-1 text-[10px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-mono">
+                  <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-mono font-medium">
                     CVE: {day.vulnerabilityCount}件
                   </span>
                 ) : (
-                  <span className="inline-block mt-1 text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                  <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-medium">
                     異常なし
                   </span>
                 )}

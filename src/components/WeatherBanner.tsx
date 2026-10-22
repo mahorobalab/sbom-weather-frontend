@@ -14,8 +14,9 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
     sunny: {
       label: '快晴（安全）',
       icon: Sun,
-      bgGradient: 'from-emerald-950/60 via-slate-900 to-slate-950 border-emerald-500/30 text-emerald-400',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+      iconColor: 'text-amber-500',
+      bgGradient: 'from-emerald-50 via-sky-50/30 to-teal-50/40 border-emerald-200/90',
+      badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300 font-medium',
       headline: '本日は快晴！セキュリティに異常はありません',
       description: '検出された脆弱性は0件です。外部からの既知の脅威はなく、システムは安全稼働しています。',
       subText: `最終スキャン: ${lastScannedAt} (自動巡回済)`
@@ -23,8 +24,9 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
     cloudy: {
       label: '曇り（要注意）',
       icon: Cloud,
-      bgGradient: 'from-slate-900 via-sky-950/40 to-slate-950 border-sky-500/30 text-sky-400',
-      badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+      iconColor: 'text-slate-500',
+      bgGradient: 'from-slate-100 via-sky-50/20 to-gray-50 border-slate-300',
+      badgeColor: 'bg-slate-200 text-slate-800 border-slate-300 font-medium',
       headline: 'うす曇り：軽微なアップデートが公開されています',
       description: '重大な脅威ではありませんが、マイナーなバグ修正や非クリティカルな更新が届いています。',
       subText: `最終スキャン: ${lastScannedAt}`
@@ -32,26 +34,29 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
     rain: {
       label: '雨（注意報）',
       icon: CloudRain,
-      bgGradient: 'from-blue-950/60 via-indigo-950/40 to-slate-950 border-blue-500/40 text-blue-400',
-      badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      iconColor: 'text-blue-500',
+      bgGradient: 'from-blue-50 via-sky-50/40 to-indigo-50/30 border-blue-200',
+      badgeColor: 'bg-blue-100 text-blue-800 border-blue-300 font-medium',
       headline: '雨模様：中程度の脆弱性が検出されました',
-      description: '条件付きで影響を受ける脆弱性が確認されています。次回の定期メンテでの対応を推奨します。',
+      description: '条件付きで影響を受ける脆弱性が確認されています。次回の定期メンテナンスでの対応を推奨します。',
       subText: `検出から ${daysUnresolved} 日経過`
     },
     thunderstorm: {
       label: '雷雨（緊急警報）',
       icon: CloudLightning,
-      bgGradient: 'from-purple-950/80 via-rose-950/50 to-slate-950 border-purple-500/50 text-purple-300',
-      badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse',
+      iconColor: 'text-amber-500',
+      bgGradient: 'from-amber-50/90 via-rose-50/40 to-orange-50/50 border-amber-300',
+      badgeColor: 'bg-rose-100 text-rose-800 border-rose-300 font-semibold animate-pulse',
       headline: '雷雨警報発令！極めて深刻な脆弱性を検知',
       description: '認証なしで外部攻撃が成立する重大な脆弱性（CVSS 9.0+）が含まれています。大至急パッチを適用してください！',
       subText: '2026/10/21 深夜公開の緊急パッチ対象'
     },
     typhoon: {
-      label: '台風（放置危険）',
+      label: '台風（放置警戒）',
       icon: Tornado,
-      bgGradient: 'from-rose-950/90 via-red-950/60 to-slate-950 border-red-500/60 text-rose-300',
-      badgeColor: 'bg-red-600/30 text-red-200 border-red-500/60 animate-bounce',
+      iconColor: 'text-rose-600',
+      bgGradient: 'from-rose-100/80 via-red-50 to-orange-50 border-rose-300',
+      badgeColor: 'bg-red-600 text-white font-bold animate-bounce',
       headline: '台風直撃！重大な脆弱性が長期間放置されています',
       description: `重大な脆弱性が未対応のまま ${daysUnresolved} 日以上経過しています。攻撃コードが出回っており、即座に相談先または保守ベンダーへ連絡してください。`,
       subText: '損害賠償・サービス停止の致命的リスクがあります'
@@ -61,15 +66,12 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
   const IconComponent = weatherConfig.icon;
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border p-6 md:p-8 bg-gradient-to-br ${weatherConfig.bgGradient} shadow-2xl transition-all duration-300`}>
-      {/* Background decoration elements */}
-      <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-
+    <div className={`relative overflow-hidden rounded-2xl border p-6 md:p-8 bg-gradient-to-r ${weatherConfig.bgGradient} shadow-sm transition-all duration-300`}>
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-start md:items-center gap-5">
           <div className="relative flex-shrink-0">
-            <div className="w-18 h-18 md:w-20 md:h-20 rounded-2xl glass-card flex items-center justify-center p-4 border border-white/10 shadow-inner">
-              <IconComponent className="w-full h-full" />
+            <div className={`w-18 h-18 md:w-20 md:h-20 rounded-2xl bg-white flex items-center justify-center p-4 border border-slate-200/80 shadow-sm ${weatherConfig.iconColor}`}>
+              <IconComponent className="w-full h-full stroke-[1.8]" />
             </div>
             {currentWeather === 'thunderstorm' && (
               <span className="absolute -top-1 -right-1 flex h-4 w-4">
@@ -81,35 +83,35 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
 
           <div>
             <div className="flex items-center gap-3 mb-2 flex-wrap">
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${weatherConfig.badgeColor}`}>
+              <span className={`px-3 py-1 rounded-full text-xs border shadow-2xs ${weatherConfig.badgeColor}`}>
                 {weatherConfig.label}
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-slate-500 font-mono">
                 {weatherConfig.subText}
               </span>
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight mb-1">
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight mb-1.5">
               {weatherConfig.headline}
             </h2>
-            <p className="text-sm md:text-base text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-sm md:text-base text-slate-600 max-w-2xl leading-relaxed">
               {weatherConfig.description}
             </p>
           </div>
         </div>
 
         {/* Action Button */}
-        <div className="flex flex-col sm:flex-row md:flex-col gap-3 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 flex-shrink-0">
           <button
             onClick={onOpenPdfReport}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm transition-all shadow-md hover:shadow-lg border border-slate-700/80 active:scale-95"
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm transition-all shadow-xs hover:shadow-md active:scale-98 cursor-pointer"
           >
             <FileText className="w-4 h-4 text-emerald-400" />
             <span>相談用PDF診断書を出力</span>
           </button>
           
           {currentWeather !== 'sunny' && (
-            <div className="flex items-center gap-2 text-xs text-amber-300/90 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20">
-              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 text-amber-400" />
+            <div className="flex items-center gap-2 text-xs text-amber-900 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200/90 font-medium">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 text-amber-600" />
               <span>外注先・社内SEに見せるだけで相談可能</span>
             </div>
           )}

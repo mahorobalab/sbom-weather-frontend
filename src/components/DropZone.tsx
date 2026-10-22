@@ -177,14 +177,14 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
   };
 
   return (
-    <div className="rounded-2xl glass-panel p-6 border border-slate-800">
+    <div className="rounded-2xl bg-white p-6 border border-slate-200/80 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-base font-semibold text-white flex items-center gap-2">
-            <UploadCloud className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <UploadCloud className="w-5 h-5 text-indigo-600" />
             <span>即座にロックファイルをドラッグ＆ドロップ解析</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             ソースコードは一切預かりません。パッケージ名とバージョンのみを安全にエッジ解析します。
           </p>
         </div>
@@ -194,13 +194,13 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           <span className="text-xs text-slate-500">お試しテスト:</span>
           <button
             onClick={() => loadSample('php_vulnerable')}
-            className="text-xs px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all font-mono"
+            className="text-xs px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition-all font-medium cursor-pointer shadow-2xs"
           >
             ⚡ PHP脆弱性サンプル (雷雨)
           </button>
           <button
             onClick={() => loadSample('clean_npm')}
-            className="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all font-mono"
+            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 transition-all font-medium cursor-pointer shadow-2xs"
           >
             ☀️ 安全なNodeサンプル (快晴)
           </button>
@@ -213,8 +213,8 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         onDrop={handleDrop}
         className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
           isDragging
-            ? 'border-indigo-400 bg-indigo-500/10 scale-[1.01]'
-            : 'border-slate-700/80 hover:border-slate-600 bg-slate-900/40'
+            ? 'border-indigo-500 bg-indigo-50/50 scale-[1.01]'
+            : 'border-slate-300 hover:border-indigo-400 bg-slate-50/40 hover:bg-slate-50/80'
         }`}
       >
         <input
@@ -225,30 +225,31 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           onChange={handleFileInput}
         />
         <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 mb-3 group-hover:scale-110 transition-transform">
-            <FileCode className="w-6 h-6 text-indigo-400" />
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mb-3 shadow-xs group-hover:scale-105 transition-transform">
+            <FileCode className="w-6 h-6" />
           </div>
-          <p className="text-sm font-medium text-slate-200">
-            ここに <span className="text-indigo-300 font-mono">composer.lock</span> または{' '}
-            <span className="text-indigo-300 font-mono">package-lock.json</span> をドロップ
+          <p className="text-sm font-medium text-slate-700">
+            ここに <span className="text-indigo-600 font-semibold font-mono">composer.lock</span> または{' '}
+            <span className="text-indigo-600 font-semibold font-mono">package-lock.json</span> をドロップ
           </p>
           <p className="text-xs text-slate-500 mt-1">または クリックしてファイルを選択</p>
         </label>
       </div>
 
       {parseError && (
-        <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
           <span>{parseError}</span>
         </div>
       )}
 
       {currentFileName && !parseError && (
-        <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-mono">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
           <span>解析完了: {currentFileName}</span>
         </div>
       )}
     </div>
   );
 };
+

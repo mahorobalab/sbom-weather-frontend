@@ -111,7 +111,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Navbar */}
       <Navbar
         sites={sites}
@@ -126,17 +126,17 @@ export default function App() {
         {currentTab === 'dashboard' && (
           <>
             {/* Top Bar for Project Context */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-black tracking-tight text-white m-0">
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">
                     {currentSite.name}
                   </h1>
-                  <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono border border-indigo-500/30">
-                    {currentSite.ecosystem.toUpperCase()}
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-medium border border-slate-200 uppercase">
+                    {currentSite.ecosystem}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 font-mono mt-1">
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-mono mt-1">
                   <span>{currentSite.url}</span>
                   <span>•</span>
                   <span>連携方式: {currentSite.syncMethod}</span>
@@ -147,9 +147,9 @@ export default function App() {
                 <button
                   onClick={handleRefreshScan}
                   disabled={isScanning}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-all active:scale-95 disabled:opacity-50"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-indigo-400 ${isScanning ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
                   <span>{isScanning ? '脆弱性DB照合中...' : '今すぐ最新DBと照合'}</span>
                 </button>
               </div>
@@ -194,11 +194,11 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-slate-400">SBOM Ninja</span>
-            <span>— ソフトウェア脆弱性お天気ダッシュボード</span>
+            <span className="font-bold text-slate-800">SBOM Weather</span>
+            <span>— ソフトウェア脆弱性お天気予報</span>
           </div>
           <div className="text-slate-500">
             Cloudflare Workers & D1 & KV Powered • 高速エッジ照合

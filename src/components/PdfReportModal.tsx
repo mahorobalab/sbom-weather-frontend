@@ -16,25 +16,25 @@ export const PdfReportModal: React.FC<PdfReportModalProps> = ({ project, onClose
   const isDanger = vulnerabilities.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden my-8">
         {/* Modal Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700 no-print">
+        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200 no-print">
           <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-400" />
-            <h3 className="font-semibold text-white text-sm">相談用 A4 脆弱性診断報告書プレビュー</h3>
+            <FileText className="w-5 h-5 text-indigo-600" />
+            <h3 className="font-bold text-slate-800 text-sm">相談用 A4 脆弱性診断報告書プレビュー</h3>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all shadow"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>印刷 / PDFとして保存</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
