@@ -152,13 +152,13 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({ sites, onAddSite
 
               {/* Ownership verification code block */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-mono max-w-xs truncate" title={`<meta name="sbom-ninja-verification" content="${site.verificationToken}">`}>
-                  {`<meta name="sbom-ninja-verification" content="${site.verificationToken}">`}
+                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 font-mono max-w-xs truncate" title={`<meta name="sbom-weather-verification" content="${site.verificationToken}">`}>
+                  {`<meta name="sbom-weather-verification" content="${site.verificationToken}">`}
                 </div>
                 <button
                   onClick={() =>
                     copyToClipboard(
-                      `<meta name="sbom-ninja-verification" content="${site.verificationToken}">`,
+                      `<meta name="sbom-weather-verification" content="${site.verificationToken}">`,
                       site.id
                     )
                   }
