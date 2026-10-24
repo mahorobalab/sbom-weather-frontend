@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { Globe, Plus, ShieldCheck, AlertCircle, Copy, Check, Loader2, BookOpen } from 'lucide-react';
+import { Globe, Plus, ShieldCheck, AlertCircle, Copy, Check, Loader2, BookOpen, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ProjectSite } from '../types';
+import { PLAN_CONFIGS, type ProjectSite, type PlanTier } from '../types';
 import { IntegrationGuideModal } from './IntegrationGuideModal';
 
 interface SiteManagementProps {
   sites: ProjectSite[];
   onAddSite: (site: Partial<ProjectSite>) => void;
   onVerifySite?: (siteId: string) => void;
+  currentPlan?: PlanTier;
+  onOpenUpgradeModal?: (reason: 'site_limit' | null) => void;
 }
 
 export const SiteManagement: React.FC<SiteManagementProps> = ({
   sites,
   onAddSite,
-  onVerifySite
+  onVerifySite,
+  currentPlan = 'free',
+  onOpenUpgradeModal
 }) => {
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
@@ -103,6 +107,17 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
     setIsGuideModalOpen(true);
   };
 
+  const planConfig = PLAN_CONFIGS[currentPlan];
+  const isLimitReached = sites.length >= planConfig.maxSites;
+
+  const handleAddClick = () => {
+    if (isLimitReached) {
+      onOpenUpgradeModal?.('site_limit');
+    } else {
+      setIsAdding(!isAdding);
+    }
+  };
+
   return (
     <div className="rounded-2xl bg-white p-6 border border-slate-200/80 shadow-xs">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -110,13 +125,31 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
           <h3 className="text-base font-bold text-slate-900">{t('sites.title')}</h3>
           <p className="text-xs text-slate-500 mt-0.5">{t('sites.subtitle')}</p>
         </div>
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t('sites.addNewSite')}</span>
-        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200/80 text-xs">
+            <span className="text-slate-500 font-medium">
+              {t('sites.planUsage', { current: sites.length, max: planConfig.maxSites, plan: t(planConfig.nameKey as any) })}
+            </span>
+            {isLimitReached && (
+              <button
+                onClick={() => onOpenUpgradeModal?.('site_limit')}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold shadow-2xs transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>{t('sites.upgradePlanBtn')}</span>
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={handleAddClick}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer active:scale-98"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('sites.addNewSite')}</span>
+          </button>
+        </div>
       </div>
 
       {isAdding && (

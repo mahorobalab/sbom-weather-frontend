@@ -24,7 +24,9 @@
     "logoutConfirmTitle": "ログアウトの確認",
     "logoutConfirmMessage": "アカウント（{{identifier}}）からログアウトしますか？",
     "logoutConfirmButton": "ログアウトする",
-    "userFallback": "ユーザー"
+    "userFallback": "ユーザー",
+    "planTooltip": "現在のプラン / アップグレード設定",
+    "upgradeTag": "PROへ"
   },
   "dashboard": {
     "syncMethod": "連携方式: {{method}}",
@@ -149,7 +151,9 @@
     "verifying": "確認中...",
     "verificationSuccess": "所有権の確認が完了しました！",
     "verificationFailed": "対象URLに認証タグまたはファイルが見つかりませんでした。",
-    "viewGuide": "導入手順を見る"
+    "viewGuide": "導入手順を見る",
+    "planUsage": "プラン: {{plan}} ({{current}} / {{max}} サイト利用中)",
+    "upgradePlanBtn": "アップグレード"
   },
   "integration": {
     "title": "クイック導入ガイド",
@@ -232,5 +236,39 @@
     "member1Name": "前田 慎吾 (あなた)",
     "member2Name": "佐藤 社内SE",
     "member3Name": "外部保守パートナー (SIer)"
+  },
+  "pricing": {
+    "badge": "明朗なBtoB料金プラン",
+    "modalTitle": "ビジネス規模に応じた最適なプランを選択",
+    "modalSubtitle": "Freeプランはクレジットカード不要ですぐに使えます。管理サイト数に応じていつでもアップグレード可能。",
+    "siteLimitReachedTitle": "監視対象サイトの上限に達しました",
+    "siteLimitReachedDesc": "現在のプランでは {{count}} サイトまで登録可能です。Basic（最大3サイト）または Pro（最大6サイト）にアップグレードして追加のサイトを監視しましょう。",
+    "popularBadge": "一番人気・おすすめ",
+    "currentPlanBadge": "現在契約中",
+    "freeName": "Free プラン",
+    "basicName": "Basic プラン",
+    "proName": "Pro プラン",
+    "freePrice": "0円",
+    "perMonth": " / 月 (税抜)",
+    "maxSitesLabel": "最大 {{max}} サイトまで管理",
+    "featManualScan": "手動ロックファイル & CycloneDX 解析",
+    "featCycloneDxExport": "標準 CycloneDX 1.5 JSON 出力",
+    "featSingleSite": "1サイトまで永久無料",
+    "featBasicWeather": "デイリーセキュリティお天気判定",
+    "featUpTo3Sites": "最大 3 サイトまで一括管理",
+    "featDailyMonitoring": "デイリー脆弱性自動監視 (Cron)",
+    "featGhActionsWpSync": "GitHub Actions & WPプラグイン自動同期",
+    "featMultiNotifications": "Slack / Teams / メール通知連携",
+    "featPdfReportExport": "相談用 A4 PDF 診断レポート無制限出力",
+    "featUpTo6Sites": "最大 6 サイトまで一括管理",
+    "featAllBasicFeatures": "Basic の全機能を含む",
+    "featPackageHistory": "パッケージ導入履歴 & 差分追跡タイムライン",
+    "featPriorityEmergencyAlerts": "ゼロデイ・緊急脆弱性の即時優先通知",
+    "featWhiteLabelPdf": "制作会社向けホワイトラベル PDF (自社ロゴ)",
+    "alreadyActive": "現在のプランです",
+    "selectFreePlan": "Free プランを選択",
+    "upgradeToPlan": "{{name}} にアップグレード",
+    "guaranteeNote": "即日利用可能。稟議が不要な月額低価格設定です。",
+    "cancelAnytime": "いつでもプラン変更・解約可能"
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Shield, ChevronDown, LayoutDashboard, Server, Users, LogOut } from 'lucide-react';
+import { Shield, ChevronDown, LayoutDashboard, Server, Users, LogOut, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { ProjectSite } from '../types';
+import { PLAN_CONFIGS, type ProjectSite, type PlanTier } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -11,6 +11,8 @@ interface NavbarProps {
   onSelectSite: (site: ProjectSite) => void;
   currentTab: 'dashboard' | 'sites' | 'users';
   onSelectTab: (tab: 'dashboard' | 'sites' | 'users') => void;
+  currentPlan?: PlanTier;
+  onOpenPricingModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,6 +21,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectSite,
   currentTab,
   onSelectTab,
+  currentPlan = 'free',
+  onOpenPricingModal
 }) => {
   const { t } = useTranslation();
   const { currentUser, signInWithGoogle, signOut } = useAuth();
@@ -96,7 +100,28 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Site Switcher, Language Switcher & User Profile */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Plan Tier Badge / Upgrade Button */}
+            <button
+              onClick={onOpenPricingModal}
+              title={t('navbar.planTooltip')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs active:scale-98 ${
+                currentPlan === 'pro'
+                  ? 'bg-gradient-to-r from-indigo-500/10 to-sky-500/10 border-indigo-300 text-indigo-700'
+                  : currentPlan === 'basic'
+                  ? 'bg-slate-100 border-slate-300 text-slate-700'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>{t(PLAN_CONFIGS[currentPlan || 'free'].nameKey as any)}</span>
+              {currentPlan === 'free' && (
+                <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.2 rounded bg-indigo-600 text-white font-bold ml-0.5">
+                  {t('navbar.upgradeTag')}
+                </span>
+              )}
+            </button>
+
             {/* Site Selector Dropdown */}
             <div className="relative">
               <select

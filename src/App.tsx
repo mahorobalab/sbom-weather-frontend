@@ -8,8 +8,9 @@ import { DependencyTable } from './components/DependencyTable';
 import { SiteManagement } from './components/SiteManagement';
 import { UserManagement } from './components/UserManagement';
 import { PdfReportModal } from './components/PdfReportModal';
+import { PricingModal } from './components/PricingModal';
 import { INITIAL_PROJECTS, INITIAL_MEMBERS } from './mockData';
-import type { ProjectSite, TeamMember, Dependency, WeatherStatus } from './types';
+import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier } from './types';
 import { RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -20,6 +21,18 @@ export default function App() {
   const [members, setMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [currentPlan, setCurrentPlan] = useState<PlanTier>('free');
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
+  const [upgradeReason, setUpgradeReason] = useState<'site_limit' | 'feature_locked' | null>(null);
+
+  const handleOpenUpgradeModal = (reason: 'site_limit' | 'feature_locked' | null = null) => {
+    setUpgradeReason(reason);
+    setIsPricingModalOpen(true);
+  };
+
+  const handleSelectPlan = (tier: PlanTier) => {
+    setCurrentPlan(tier);
+  };
 
   const currentSite = sites.find((s) => s.id === currentSiteId) || sites[0];
 
@@ -131,6 +144,8 @@ export default function App() {
         onSelectSite={(s) => setCurrentSiteId(s.id)}
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
+        currentPlan={currentPlan}
+        onOpenPricingModal={() => handleOpenUpgradeModal(null)}
       />
 
       {/* Main Container */}
@@ -189,6 +204,8 @@ export default function App() {
             sites={sites}
             onAddSite={handleAddSite}
             onVerifySite={handleVerifySite}
+            currentPlan={currentPlan}
+            onOpenUpgradeModal={handleOpenUpgradeModal}
           />
         )}
 
@@ -200,6 +217,17 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Freemium Pricing & Upgrade Modal */}
+      {isPricingModalOpen && (
+        <PricingModal
+          currentPlan={currentPlan}
+          currentSiteCount={sites.length}
+          onSelectPlan={handleSelectPlan}
+          onClose={() => setIsPricingModalOpen(false)}
+          upgradeReason={upgradeReason}
+        />
+      )}
 
       {/* A4 PDF Report Preview Modal */}
       {isPdfModalOpen && (

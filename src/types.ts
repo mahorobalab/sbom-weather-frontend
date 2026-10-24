@@ -56,3 +56,56 @@ export interface TeamMember {
   role: 'owner' | 'admin' | 'viewer';
   addedAt: string;
 }
+
+export type PlanTier = 'free' | 'basic' | 'pro';
+
+export interface PlanConfig {
+  tier: PlanTier;
+  nameKey: string;
+  priceMonthly: number;
+  maxSites: number;
+  featuresKeys: string[];
+  isPopular?: boolean;
+}
+
+export const PLAN_CONFIGS: Record<PlanTier, PlanConfig> = {
+  free: {
+    tier: 'free',
+    nameKey: 'pricing.freeName',
+    priceMonthly: 0,
+    maxSites: 1,
+    featuresKeys: [
+      'pricing.featManualScan',
+      'pricing.featCycloneDxExport',
+      'pricing.featSingleSite',
+      'pricing.featBasicWeather'
+    ]
+  },
+  basic: {
+    tier: 'basic',
+    nameKey: 'pricing.basicName',
+    priceMonthly: 3000,
+    maxSites: 3,
+    featuresKeys: [
+      'pricing.featUpTo3Sites',
+      'pricing.featDailyMonitoring',
+      'pricing.featGhActionsWpSync',
+      'pricing.featMultiNotifications',
+      'pricing.featPdfReportExport'
+    ]
+  },
+  pro: {
+    tier: 'pro',
+    nameKey: 'pricing.proName',
+    priceMonthly: 5500,
+    maxSites: 6,
+    isPopular: true,
+    featuresKeys: [
+      'pricing.featUpTo6Sites',
+      'pricing.featAllBasicFeatures',
+      'pricing.featPackageHistory',
+      'pricing.featPriorityEmergencyAlerts',
+      'pricing.featWhiteLabelPdf'
+    ]
+  }
+};

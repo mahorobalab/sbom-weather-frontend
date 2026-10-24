@@ -24,7 +24,9 @@
     "logoutConfirmTitle": "Confirm Logout",
     "logoutConfirmMessage": "Are you sure you want to log out from account ({{identifier}})?",
     "logoutConfirmButton": "Log Out",
-    "userFallback": "User"
+    "userFallback": "User",
+    "planTooltip": "Current Plan / Upgrade Options",
+    "upgradeTag": "Upgrade"
   },
   "dashboard": {
     "syncMethod": "Sync Method: {{method}}",
@@ -149,7 +151,9 @@
     "verifying": "Verifying...",
     "verificationSuccess": "Ownership Verified!",
     "verificationFailed": "Verification token could not be verified on the target URL yet.",
-    "viewGuide": "Integration Guide"
+    "viewGuide": "Integration Guide",
+    "planUsage": "Plan: {{plan}} ({{current}} / {{max}} sites)",
+    "upgradePlanBtn": "Upgrade"
   },
   "integration": {
     "title": "Quick Integration Guide",
@@ -232,5 +236,39 @@
     "member1Name": "Shingo Maeda (You)",
     "member2Name": "Sato (Internal SE)",
     "member3Name": "External Maintenance Partner (SIer)"
+  },
+  "pricing": {
+    "badge": "Transparent BtoB Pricing",
+    "modalTitle": "Select the Right Plan for Your Business",
+    "modalSubtitle": "No credit card required for Free plan. Upgrade anytime as your site portfolio grows.",
+    "siteLimitReachedTitle": "Monitored Site Limit Reached",
+    "siteLimitReachedDesc": "Your current plan allows up to {{count}} site. Upgrade to Basic (3 sites) or Pro (6 sites) to monitor additional applications.",
+    "popularBadge": "Recommended",
+    "currentPlanBadge": "Current",
+    "freeName": "Free Plan",
+    "basicName": "Basic Plan",
+    "proName": "Pro Plan",
+    "freePrice": "Free",
+    "perMonth": "/ month",
+    "maxSitesLabel": "Up to {{max}} site(s)",
+    "featManualScan": "Manual lockfile & CycloneDX analysis",
+    "featCycloneDxExport": "Standard CycloneDX 1.5 JSON export",
+    "featSingleSite": "1 monitored site forever free",
+    "featBasicWeather": "Daily security weather status",
+    "featUpTo3Sites": "Up to 3 monitored sites",
+    "featDailyMonitoring": "Automated daily vulnerability monitoring",
+    "featGhActionsWpSync": "GitHub Actions & WordPress plugin sync",
+    "featMultiNotifications": "Slack, Teams & Email alert integration",
+    "featPdfReportExport": "Consultation-ready A4 PDF reports",
+    "featUpTo6Sites": "Up to 6 monitored sites",
+    "featAllBasicFeatures": "All Basic features included",
+    "featPackageHistory": "Package adoption history & diff timeline",
+    "featPriorityEmergencyAlerts": "Priority instant zero-day emergency alerts",
+    "featWhiteLabelPdf": "Agency white-label PDF (Custom logo)",
+    "alreadyActive": "Current Plan",
+    "selectFreePlan": "Select Free Plan",
+    "upgradeToPlan": "Upgrade to {{name}}",
+    "guaranteeNote": "Safe & instant activation. No complex contract hurdles.",
+    "cancelAnytime": "Cancel or change plans anytime"
   }
 }
