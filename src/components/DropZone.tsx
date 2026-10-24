@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UploadCloud, FileCode, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency } from '../types';
+import { isCycloneDX, parseCycloneDX } from '../lib/cyclonedx';
 
 interface DropZoneProps {
   onFileParsed: (fileName: string, dependencies: Dependency[], isVulnerable: boolean) => void;
@@ -28,11 +29,17 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       setCurrentFileName(fileName);
       const json = JSON.parse(content);
 
-      const parsedDeps: Dependency[] = [];
-      let ecosystem = 'composer';
+      let parsedDeps: Dependency[] = [];
+      let ecosystem: 'composer' | 'npm' | 'wordpress' = 'composer';
 
+      // Parse CycloneDX JSON format (v1.4, v1.5, v1.6)
+      if (isCycloneDX(json)) {
+        const cdx = parseCycloneDX(json);
+        parsedDeps = cdx.dependencies;
+        ecosystem = cdx.ecosystem;
+      }
       // Parse Composer.lock format
-      if (json.packages || json['packages-dev']) {
+      else if (json.packages || json['packages-dev']) {
         ecosystem = 'composer';
         const allPkgs = [...(json.packages || []), ...(json['packages-dev'] || [])];
         allPkgs.forEach((pkg: any) => {
@@ -154,7 +161,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
   };
 
   // Instant sample loading for testing
-  const loadSample = (type: 'php_vulnerable' | 'clean_npm') => {
+  const loadSample = (type: 'php_vulnerable' | 'clean_npm' | 'cyclonedx') => {
     if (type === 'php_vulnerable') {
       const sampleComposer = JSON.stringify({
         packages: [
@@ -165,7 +172,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         ]
       });
       processFileContent(sampleComposer, t('dropzone.phpVulnerableSampleName'));
-    } else {
+    } else if (type === 'clean_npm') {
       const sampleNpm = JSON.stringify({
         packages: {
           '': {},
@@ -175,6 +182,38 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         }
       });
       processFileContent(sampleNpm, t('dropzone.cleanNpmSampleName'));
+    } else {
+      const sampleCdx = JSON.stringify({
+        bomFormat: 'CycloneDX',
+        specVersion: '1.5',
+        metadata: {
+          component: {
+            type: 'application',
+            name: 'cyclonedx-demo-site'
+          }
+        },
+        components: [
+          {
+            type: 'library',
+            name: 'php',
+            version: '8.2.14',
+            purl: 'pkg:composer/php@8.2.14'
+          },
+          {
+            type: 'library',
+            name: 'laravel/framework',
+            version: '10.35.0',
+            purl: 'pkg:composer/laravel/framework@10.35.0'
+          },
+          {
+            type: 'library',
+            name: 'monolog/monolog',
+            version: '3.5.0',
+            purl: 'pkg:composer/monolog/monolog@3.5.0'
+          }
+        ]
+      });
+      processFileContent(sampleCdx, t('dropzone.cycloneDxSampleName'));
     }
   };
 
@@ -206,6 +245,12 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           >
             {t('dropzone.npmSample')}
           </button>
+          <button
+            onClick={() => loadSample('cyclonedx')}
+            className="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300/80 transition-all font-medium cursor-pointer shadow-2xs"
+          >
+            {t('dropzone.cycloneDxSample')}
+          </button>
         </div>
       </div>
 
@@ -223,7 +268,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           type="file"
           id="file-upload"
           className="hidden"
-          accept=".json,.lock"
+          accept=".json,.lock,.cdx"
           onChange={handleFileInput}
         />
         <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">

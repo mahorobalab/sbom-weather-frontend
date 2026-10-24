@@ -180,7 +180,7 @@ export default function App() {
             <DropZone onFileParsed={handleFileParsed} />
 
             {/* 4. Detected Packages & CVEs Table */}
-            <DependencyTable dependencies={currentSite.dependencies} />
+            <DependencyTable dependencies={currentSite.dependencies} project={currentSite} />
           </>
         )}
 

@@ -1,14 +1,34 @@
 import React from 'react';
-import { ShieldCheck, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Dependency } from '../types';
+import type { Dependency, ProjectSite } from '../types';
+import { downloadCycloneDXFile } from '../lib/cyclonedx';
 
 interface DependencyTableProps {
   dependencies: Dependency[];
+  project?: ProjectSite;
 }
 
-export const DependencyTable: React.FC<DependencyTableProps> = ({ dependencies }) => {
+export const DependencyTable: React.FC<DependencyTableProps> = ({ dependencies, project }) => {
   const { t } = useTranslation();
+
+  const handleExport = () => {
+    const targetProject: ProjectSite = project || {
+      id: 'current-site',
+      name: 'Site-Dependencies',
+      url: 'https://example.com',
+      ecosystem: dependencies[0]?.ecosystem || 'composer',
+      syncMethod: 'actions',
+      isVerified: true,
+      verificationToken: '',
+      currentWeather: 'sunny',
+      lastScannedAt: new Date().toISOString(),
+      daysUnresolved: 0,
+      dependencies,
+      forecast: []
+    };
+    downloadCycloneDXFile(targetProject);
+  };
 
   return (
     <div className="rounded-2xl bg-white p-6 border border-slate-200/80 shadow-xs">
@@ -17,6 +37,15 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({ dependencies }
           <h3 className="text-base font-bold text-slate-900">{t('table.title')}</h3>
           <p className="text-xs text-slate-500 mt-0.5">{t('table.detectedCount', { count: dependencies.length })}</p>
         </div>
+
+        <button
+          onClick={handleExport}
+          title={t('table.exportCycloneDxTooltip')}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5 text-indigo-600" />
+          <span>{t('table.exportCycloneDx')}</span>
+        </button>
       </div>
 
       <div className="overflow-x-auto">

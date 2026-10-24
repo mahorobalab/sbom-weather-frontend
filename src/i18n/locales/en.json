@@ -102,13 +102,15 @@
     "trySample": "Try Samples:",
     "phpSample": "⚡ PHP Vulnerability Sample (Thunderstorm)",
     "npmSample": "☀️ Clean Node Sample (Sunny)",
-    "dropInstruction": "Drop composer.lock or package-lock.json here",
+    "cycloneDxSample": "🌀 CycloneDX Sample (Thunderstorm)",
+    "dropInstruction": "Drop composer.lock, package-lock.json, or CycloneDX (bom.json) here",
     "dropInstructionOr": "or click to select file",
-    "unsupportedFormat": "Unsupported file format. Please provide composer.lock or package-lock.json.",
+    "unsupportedFormat": "Unsupported file format. Please provide composer.lock, package-lock.json, or CycloneDX JSON.",
     "jsonParseError": "Failed to parse JSON.",
     "analysisComplete": "Analysis complete: {{fileName}}",
     "phpVulnerableSampleName": "composer.lock (PHP 8.2 vulnerability reproduction sample)",
-    "cleanNpmSampleName": "package-lock.json (Safe clean sample)"
+    "cleanNpmSampleName": "package-lock.json (Safe clean sample)",
+    "cycloneDxSampleName": "bom.json (CycloneDX v1.5 standard format)"
   },
   "table": {
     "title": "Components & Vulnerability Assessment Results",
@@ -122,7 +124,9 @@
     "statusSafe": "Safe",
     "updateTo": "Update to {{version}}",
     "upToDate": "Up to date or patched",
-    "noVulnDash": "—"
+    "noVulnDash": "—",
+    "exportCycloneDx": "Export CycloneDX (JSON)",
+    "exportCycloneDxTooltip": "Download industry-standard CycloneDX 1.5 SBOM file"
   },
   "sites": {
     "title": "Monitored Sites Management",
