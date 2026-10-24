@@ -51,6 +51,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources: defaultResources,
+    defaultNS: 'translation',
     lng: initialEffectiveLang,
     fallbackLng: 'en',
     interpolation: {
