@@ -18,9 +18,11 @@
     "language": "Language"
   },
   "navbar": {
-    "dashboardTab": "Weather Forecast",
+    "dashboardTab": "Weather",
     "sitesTab": "Site Management",
     "usersTab": "Team Permissions",
+    "settingsTooltip": "Settings",
+    "backToDashboard": "Back to Dashboard",
     "logoutConfirmTitle": "Confirm Logout",
     "logoutConfirmMessage": "Are you sure you want to log out from account ({{identifier}})?",
     "logoutConfirmButton": "Log Out",
@@ -70,7 +72,7 @@
     "advisorBadge": "Ready to share directly with your SE or contractor for advice"
   },
   "forecast": {
-    "title": "Weekly Security Forecast (7-Day Trend)",
+    "title": "Recent 7-Day Security Weather Trend",
     "note": "※ If unaddressed, conditions degrade from 'Rain' to 'Thunderstorm' and 'Typhoon'",
     "clean": "No anomalies",
     "cveCount": "CVE: {{count}}",
@@ -270,5 +272,34 @@
     "upgradeToPlan": "Upgrade to {{name}}",
     "guaranteeNote": "Safe & instant activation. No complex contract hurdles.",
     "cancelAnytime": "Cancel or change plans anytime"
+  },
+  "settings": {
+    "title": "Settings",
+    "backToDashboard": "Back to Dashboard",
+    "navSites": "Sites & Domains",
+    "navUsers": "Team & Permissions",
+    "navBilling": "Plan & Billing",
+    "navIntegrations": "Integrations",
+    "billing": {
+      "title": "Subscription & Limits",
+      "description": "Review and manage your plan tier and site monitoring quota.",
+      "currentPlan": "Current Plan Tier",
+      "siteQuota": "Site Usage Quota",
+      "siteQuotaDetail": "{{used}} of {{max}} sites registered",
+      "unlimited": "Unlimited",
+      "changePlan": "Upgrade / Change Plan",
+      "featuresIncluded": "Features Included in {{plan}} Plan",
+      "manageStripe": "Stripe Customer Portal"
+    },
+    "integrations": {
+      "title": "Integrations & Automation",
+      "description": "Connect your CI/CD pipelines, repository webhooks, and WordPress to send SBOM payloads automatically.",
+      "githubTitle": "GitHub Actions",
+      "githubDesc": "Trigger automatic vulnerability diff scans whenever lockfiles change on the main branch.",
+      "wpTitle": "WordPress Plugin",
+      "wpDesc": "Synchronize installed plugins and themes automatically without requiring Git access.",
+      "openGuide": "View Integration Guide",
+      "statusConnected": "Ready to Connect"
+    }
   }
 }

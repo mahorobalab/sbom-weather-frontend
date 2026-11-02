@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Shield, ChevronDown, LayoutDashboard, Server, Users, LogOut, Sparkles } from 'lucide-react';
+import { Shield, ChevronDown, LogOut, Sparkles } from 'lucide-react';
+import { BsFillGearFill } from 'react-icons/bs';
 import { useTranslation } from 'react-i18next';
 import { PLAN_CONFIGS, type ProjectSite, type PlanTier } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,8 +10,8 @@ interface NavbarProps {
   sites: ProjectSite[];
   currentSite: ProjectSite;
   onSelectSite: (site: ProjectSite) => void;
-  currentTab: 'dashboard' | 'sites' | 'users';
-  onSelectTab: (tab: 'dashboard' | 'sites' | 'users') => void;
+  currentView: 'dashboard' | 'settings';
+  onSelectView: (view: 'dashboard' | 'settings') => void;
   currentPlan?: PlanTier;
   onOpenPricingModal?: () => void;
 }
@@ -19,8 +20,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   sites,
   currentSite,
   onSelectSite,
-  currentTab,
-  onSelectTab,
+  currentView,
+  onSelectView,
   currentPlan = 'free',
   onOpenPricingModal
 }) => {
@@ -42,10 +43,13 @@ export const Navbar: React.FC<NavbarProps> = ({
     <>
       <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 lg:px-8 py-3 shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {/* Brand */}
+          {/* Brand Logo & Tagline */}
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => onSelectTab('dashboard')}>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20">
+            <div
+              className="flex items-center gap-2.5 cursor-pointer select-none group"
+              onClick={() => onSelectView('dashboard')}
+            >
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20 group-hover:scale-102 transition-transform">
                 <Shield className="w-5 h-5" />
               </div>
               <div>
@@ -60,46 +64,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Navigation Tabs */}
-            <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-              <button
-                onClick={() => onSelectTab('dashboard')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  currentTab === 'dashboard'
-                    ? 'bg-white text-indigo-700 shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 font-medium'
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>{t('navbar.dashboardTab')}</span>
-              </button>
-              <button
-                onClick={() => onSelectTab('sites')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  currentTab === 'sites'
-                    ? 'bg-white text-indigo-700 shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 font-medium'
-                }`}
-              >
-                <Server className="w-3.5 h-3.5" />
-                <span>{t('navbar.sitesTab')}</span>
-              </button>
-              <button
-                onClick={() => onSelectTab('users')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  currentTab === 'users'
-                    ? 'bg-white text-indigo-700 shadow-xs font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 font-medium'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>{t('navbar.usersTab')}</span>
-              </button>
-            </nav>
           </div>
 
-          {/* Site Switcher, Language Switcher & User Profile */}
+          {/* Site Switcher, Language Switcher, Settings & User Profile */}
           <div className="flex items-center gap-2.5">
             {/* Plan Tier Badge / Upgrade Button */}
             <button
@@ -141,8 +108,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Language Switcher with Globe Icon (placed next to login) */}
+            {/* Language Switcher with Globe Icon */}
             <LanguageSwitcher />
+
+            {/* Settings Gear Button (BsFillGearFill from react-icons/bs) */}
+            <button
+              onClick={() => onSelectView(currentView === 'settings' ? 'dashboard' : 'settings')}
+              title={t('navbar.settingsTooltip')}
+              aria-label={t('navbar.settingsTooltip')}
+              className={`p-2 rounded-xl border transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center justify-center ${
+                currentView === 'settings'
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-600 ring-2 ring-indigo-500/20'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BsFillGearFill className="w-4 h-4" />
+            </button>
 
             {/* User Auth Profile */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">

@@ -1,29 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from './components/Navbar';
 import { WeatherBanner } from './components/WeatherBanner';
 import { WeeklyForecast } from './components/WeeklyForecast';
 import { DropZone } from './components/DropZone';
 import { DependencyTable } from './components/DependencyTable';
-import { SiteManagement } from './components/SiteManagement';
-import { UserManagement } from './components/UserManagement';
+import { SettingsLayout, type SettingsTab } from './components/SettingsLayout';
 import { PdfReportModal } from './components/PdfReportModal';
 import { PricingModal } from './components/PricingModal';
 import { INITIAL_PROJECTS, INITIAL_MEMBERS } from './mockData';
 import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier } from './types';
 import { RefreshCw } from 'lucide-react';
 
+// Parse URL path for initial view and settings subtab
+const parseUrlPath = (): { view: 'dashboard' | 'settings'; tab: SettingsTab } => {
+  if (typeof window === 'undefined') {
+    return { view: 'dashboard', tab: 'sites' };
+  }
+  const path = window.location.pathname;
+  if (path.startsWith('/config') || path.startsWith('/settings')) {
+    if (path.includes('/users') || path.includes('/team')) return { view: 'settings', tab: 'users' };
+    if (path.includes('/billing') || path.includes('/plan')) return { view: 'settings', tab: 'billing' };
+    if (path.includes('/integrations')) return { view: 'settings', tab: 'integrations' };
+    return { view: 'settings', tab: 'sites' };
+  }
+  return { view: 'dashboard', tab: 'sites' };
+};
+
 export default function App() {
   const { t } = useTranslation();
   const [sites, setSites] = useState<ProjectSite[]>(INITIAL_PROJECTS);
   const [currentSiteId, setCurrentSiteId] = useState<string>(INITIAL_PROJECTS[0].id);
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'sites' | 'users'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'settings'>(() => parseUrlPath().view);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>(() => parseUrlPath().tab);
   const [members, setMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [currentPlan, setCurrentPlan] = useState<PlanTier>('free');
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
   const [upgradeReason, setUpgradeReason] = useState<'site_limit' | 'feature_locked' | null>(null);
+
+  // Sync state on browser back / forward navigation (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseUrlPath();
+      setCurrentView(parsed.view);
+      setSettingsTab(parsed.tab);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (view: 'dashboard' | 'settings', tab: SettingsTab = settingsTab) => {
+    setCurrentView(view);
+    setSettingsTab(tab);
+    const targetUrl = view === 'settings' ? `/config/${tab}` : '/';
+    if (window.location.pathname !== targetUrl) {
+      window.history.pushState({ view, tab }, '', targetUrl);
+    }
+  };
 
   const handleOpenUpgradeModal = (reason: 'site_limit' | 'feature_locked' | null = null) => {
     setUpgradeReason(reason);
@@ -142,15 +178,15 @@ export default function App() {
         sites={sites}
         currentSite={currentSite}
         onSelectSite={(s) => setCurrentSiteId(s.id)}
-        currentTab={currentTab}
-        onSelectTab={setCurrentTab}
+        currentView={currentView}
+        onSelectView={(v) => navigateTo(v, settingsTab)}
         currentPlan={currentPlan}
         onOpenPricingModal={() => handleOpenUpgradeModal(null)}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-8">
-        {currentTab === 'dashboard' && (
+        {currentView === 'dashboard' ? (
           <>
             {/* Top Bar for Project Context */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
@@ -188,7 +224,7 @@ export default function App() {
               onOpenPdfReport={() => setIsPdfModalOpen(true)}
             />
 
-            {/* 2. Weekly Security Forecast (7-Day Trend) */}
+            {/* 2. Security Weather Trend (7-Day Trend) */}
             <WeeklyForecast forecast={currentSite.forecast} />
 
             {/* 3. Drag & Drop Lockfile Analysis */}
@@ -197,23 +233,20 @@ export default function App() {
             {/* 4. Detected Packages & CVEs Table */}
             <DependencyTable dependencies={currentSite.dependencies} project={currentSite} />
           </>
-        )}
-
-        {currentTab === 'sites' && (
-          <SiteManagement
+        ) : (
+          <SettingsLayout
+            currentSite={currentSite}
             sites={sites}
+            members={members}
+            currentPlan={currentPlan}
+            activeTab={settingsTab}
+            onSelectTab={(tab) => navigateTo('settings', tab)}
+            onBackToDashboard={() => navigateTo('dashboard')}
             onAddSite={handleAddSite}
             onVerifySite={handleVerifySite}
-            currentPlan={currentPlan}
-            onOpenUpgradeModal={handleOpenUpgradeModal}
-          />
-        )}
-
-        {currentTab === 'users' && (
-          <UserManagement
-            members={members}
             onAddMember={handleAddMember}
             onRemoveMember={handleRemoveMember}
+            onOpenUpgradeModal={handleOpenUpgradeModal}
           />
         )}
       </main>

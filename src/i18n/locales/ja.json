@@ -18,9 +18,11 @@
     "language": "言語"
   },
   "navbar": {
-    "dashboardTab": "お天気予報",
+    "dashboardTab": "お天気",
     "sitesTab": "サイト管理",
     "usersTab": "チーム権限",
+    "settingsTooltip": "設定",
+    "backToDashboard": "ダッシュボードへ戻る",
     "logoutConfirmTitle": "ログアウトの確認",
     "logoutConfirmMessage": "アカウント（{{identifier}}）からログアウトしますか？",
     "logoutConfirmButton": "ログアウトする",
@@ -70,7 +72,7 @@
     "advisorBadge": "外注先・社内SEに見せるだけで相談可能"
   },
   "forecast": {
-    "title": "週間セキュリティ予報（直近7日間の推移）",
+    "title": "直近7日間のセキュリティお天気推移",
     "note": "※ 放置期間が長引くと「雨」から「雷雨」「台風」へ悪化します",
     "clean": "異常なし",
     "cveCount": "CVE: {{count}}件",
@@ -270,5 +272,34 @@
     "upgradeToPlan": "{{name}} にアップグレード",
     "guaranteeNote": "即日利用可能。稟議が不要な月額低価格設定です。",
     "cancelAnytime": "いつでもプラン変更・解約可能"
+  },
+  "settings": {
+    "title": "設定",
+    "backToDashboard": "ダッシュボードへ戻る",
+    "navSites": "サイト管理",
+    "navUsers": "チーム & 権限",
+    "navBilling": "プラン & 請求",
+    "navIntegrations": "外部連携",
+    "billing": {
+      "title": "サブスクリプションと利用制限",
+      "description": "ご利用プランと登録可能サイト枠の確認・変更を行います。",
+      "currentPlan": "現在のご利用プラン",
+      "siteQuota": "監視サイト利用枠",
+      "siteQuotaDetail": "{{used}} / {{max}} サイト登録済み",
+      "unlimited": "無制限",
+      "changePlan": "プランの変更・アップグレード",
+      "featuresIncluded": "{{plan}} プランに含まれる機能",
+      "manageStripe": "Stripe 請求ポータル"
+    },
+    "integrations": {
+      "title": "外部連携・自動化設定",
+      "description": "CI/CDパイプラインやWordPressと連携し、デプロイや更新時に自動でSBOMを同期します。",
+      "githubTitle": "GitHub Actions",
+      "githubDesc": "メインブランチでロックファイルが変更された際に自動で脆弱性突合を実行します。",
+      "wpTitle": "WordPressプラグイン",
+      "wpDesc": "Git管理されていないWordPressサイトから、プラグインやテーマの構成情報を定期同期します。",
+      "openGuide": "導入手順ガイドを見る",
+      "statusConnected": "連携可能"
+    }
   }
 }
