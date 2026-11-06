@@ -60,7 +60,7 @@
       "label": "Thunderstorm (Emergency Warning)",
       "headline": "Thunderstorm Warning! Critical vulnerabilities detected",
       "description": "Contains severe vulnerabilities (CVSS 9.0+) allowing unauthenticated external attacks. Apply patches immediately!",
-      "subText": "Subject to emergency patch released late night 2026/10/21"
+      "subText": "Last scan: {{time}} (Urgent patch target)"
     },
     "typhoon": {
       "label": "Typhoon (Unresolved Alert)",
@@ -155,10 +155,12 @@
     "verificationFailed": "Verification token could not be verified on the target URL yet.",
     "viewGuide": "Integration Guide",
     "planUsage": "Plan: {{plan}} ({{current}} / {{max}} sites)",
-    "upgradePlanBtn": "Upgrade"
+    "upgradePlanBtn": "Upgrade",
+    "siteIdLabel": "Site ID:"
   },
   "integration": {
     "title": "Quick Integration Guide",
+    "siteIdLabel": "Site ID:",
     "subtitle": "Choose your framework and connect {{siteName}} in minutes",
     "verifiedNotice": "Site ownership successfully verified! Follow the steps below to start daily vulnerability monitoring.",
     "tabWordpress": "WordPress",

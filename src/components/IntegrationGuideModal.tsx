@@ -43,16 +43,16 @@ export const IntegrationGuideModal: React.FC<IntegrationGuideModalProps> = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // Node.js (Vite / Next.js) GitHub Actions snippet
+  // Node.js (Vite / Next.js) GitHub Actions snippet (package-lock.json + GZIP)
   const nodeWorkflow = `name: SBOM Weather Sync
 
 on:
   push:
     branches: [main]
     paths:
-      - 'package.json'
-      - 'pnpm-lock.yaml'
       - 'package-lock.json'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
   workflow_dispatch:
 
 jobs:
@@ -62,12 +62,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Send Package Manifest to SBOM Weather
+      - name: Send GZIP Package Lock to SBOM Weather
         run: |
-          curl -sS -X POST "https://api.sbom-weather.com/api/v1/sync" \\
-            -H "Content-Type: application/json" \\
-            -H "Authorization: Bearer \${{ secrets.SBOM_WEATHER_API_KEY }}" \\
-            -d @package.json
+          jq --arg site_id "${site.id}" '. + {site_id: $site_id, ecosystem: "npm"}' package-lock.json \\
+            | gzip -c \\
+            | curl -sS -X POST "https://api.sbom-weather.com/api/v1/sync" \\
+                -H "Content-Type: application/json" \\
+                -H "Content-Encoding: gzip" \\
+                -H "Authorization: Bearer \${{ secrets.SBOM_WEATHER_API_KEY }}" \\
+                --data-binary @-
 `;
 
   // PHP (Composer / Laravel) GitHub Actions snippet
@@ -90,12 +93,13 @@ jobs:
 
       - name: Send Composer Packages to SBOM Weather
         run: |
-          # Extract packages from composer.lock and submit to SBOM Weather
-          PACKAGES_JSON=$(jq '{ecosystem: "Packagist", packages: [.packages[] | {name: .name, version: .version}]}' composer.lock)
-          curl -sS -X POST "https://api.sbom-weather.com/api/v1/sync" \\
-            -H "Content-Type: application/json" \\
-            -H "Authorization: Bearer \${{ secrets.SBOM_WEATHER_API_KEY }}" \\
-            -d "\$PACKAGES_JSON"
+          jq --arg site_id "${site.id}" '{site_id: $site_id, ecosystem: "Packagist", packages: [.packages[] | {name: .name, version: .version, isDirect: true}]}' composer.lock \\
+            | gzip -c \\
+            | curl -sS -X POST "https://api.sbom-weather.com/api/v1/sync" \\
+                -H "Content-Type: application/json" \\
+                -H "Content-Encoding: gzip" \\
+                -H "Authorization: Bearer \${{ secrets.SBOM_WEATHER_API_KEY }}" \\
+                --data-binary @-
 `;
 
   // Python (FastAPI / Django / Poetry) snippet
@@ -119,9 +123,8 @@ jobs:
 
       - name: Send Python Dependencies to SBOM Weather
         run: |
-          # Parse requirements.txt and submit to SBOM Weather
           python -c '
-import json, sys
+import json
 pkgs = []
 with open("requirements.txt") as f:
     for line in f:
@@ -129,7 +132,7 @@ with open("requirements.txt") as f:
         if line and not line.startswith("#") and "==" in line:
             name, ver = line.split("==")[:2]
             pkgs.append({"name": name.strip(), "version": ver.strip()})
-print(json.dumps({"ecosystem": "PyPI", "packages": pkgs}))
+print(json.dumps({"site_id": "${site.id}", "ecosystem": "PyPI", "packages": pkgs}))
 ' | curl -sS -X POST "https://api.sbom-weather.com/api/v1/sync" \\
             -H "Content-Type: application/json" \\
             -H "Authorization: Bearer \${{ secrets.SBOM_WEATHER_API_KEY }}" \\
@@ -139,12 +142,12 @@ print(json.dumps({"ecosystem": "PyPI", "packages": pkgs}))
   // WordPress functions.php snippet
   const wpSnippet = `/**
  * SBOM Weather - Automatic Plugin Sync
- * Add this snippet to your theme's functions.php or a custom must-use plugin.
+ * Add this snippet to your theme's functions.php or install sbom-weather-connector.zip
  */
 add_action('upgrader_process_complete', 'sbom_weather_sync_plugins', 10, 2);
 
 function sbom_weather_sync_plugins($upgrader_object, $options) {
-    if ($options['type'] === 'plugin') {
+    if (!empty($options['type']) && $options['type'] === 'plugin') {
         if (!function_exists('get_plugins')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
@@ -152,18 +155,23 @@ function sbom_weather_sync_plugins($upgrader_object, $options) {
         $packages = [];
         foreach ($all_plugins as $file => $data) {
             $packages[] = [
-                'name' => dirname($file) !== '.' ? dirname($file) : $file,
+                'name' => dirname($file) !== '.' ? dirname($file) : basename($file, '.php'),
                 'version' => $data['Version'],
-                'ecosystem' => 'WordPress'
+                'ecosystem' => 'WordPress',
+                'active' => is_plugin_active($file)
             ];
         }
-        
+
         wp_remote_post('https://api.sbom-weather.com/api/v1/sync', [
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ${siteToken}'
             ],
-            'body' => json.dumps(['packages' => $packages, 'ecosystem' => 'WordPress']),
+            'body' => wp_json_encode([
+                'site_id' => '${site.id}',
+                'ecosystem' => 'WordPress',
+                'packages' => $packages
+            ]),
             'timeout' => 15
         ]);
     }
@@ -206,22 +214,39 @@ function sbom_weather_sync_plugins($upgrader_object, $options) {
           <span className="font-medium">{t('integration.verifiedNotice')}</span>
         </div>
 
-        {/* API Token Bar */}
-        <div className="px-6 py-2.5 bg-slate-100/70 border-b border-slate-200/60 flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center gap-2 text-slate-600">
-            <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
-            <span className="font-semibold text-slate-700">{t('integration.apiKeyLabel')}</span>
-            <span className="bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-800 font-bold select-all">
-              {siteToken}
-            </span>
+        {/* Site ID & API Token Bar */}
+        <div className="px-6 py-2.5 bg-slate-100/70 border-b border-slate-200/60 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <div className="flex items-center gap-4 flex-wrap text-slate-600">
+            <div className="flex items-center gap-1.5">
+              <Globe2 className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="font-semibold text-slate-700">{t('integration.siteIdLabel')}</span>
+              <span className="bg-white px-2 py-0.5 rounded border border-slate-200 text-indigo-700 font-bold select-all">
+                {site.id}
+              </span>
+              <button
+                onClick={() => copyToClipboard(site.id, 'site-id')}
+                className="flex items-center gap-1 text-[11px] font-sans text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
+              >
+                {copiedKey === 'site-id' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedKey === 'site-id' ? t('integration.copied') : t('common.copy')}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="font-semibold text-slate-700">{t('integration.apiKeyLabel')}</span>
+              <span className="bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-800 font-bold select-all">
+                {siteToken}
+              </span>
+              <button
+                onClick={() => copyToClipboard(siteToken, 'token')}
+                className="flex items-center gap-1 text-[11px] font-sans text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
+              >
+                {copiedKey === 'token' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedKey === 'token' ? t('integration.copied') : t('common.copy')}</span>
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => copyToClipboard(siteToken, 'token')}
-            className="flex items-center gap-1 text-[11px] font-sans text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
-          >
-            {copiedKey === 'token' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-            <span>{copiedKey === 'token' ? t('integration.copied') : t('integration.copyCode')}</span>
-          </button>
         </div>
 
         {/* Tabs Bar */}
@@ -302,14 +327,14 @@ function sbom_weather_sync_plugins($upgrader_object, $options) {
                   <p>{t('integration.wpPluginStep2')}</p>
                   <p>{t('integration.wpPluginStep3')}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => alert('Demo: Plugin download sbom-weather-wp.zip')}
+                <a
+                  href="/sbom-weather-connector.zip"
+                  download="sbom-weather-connector.zip"
                   className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-xs cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>{t('integration.wpDownloadBtn')}</span>
-                </button>
+                </a>
               </div>
 
               <div>

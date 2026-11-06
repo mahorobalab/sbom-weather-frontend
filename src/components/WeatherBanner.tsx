@@ -51,7 +51,7 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
       badgeColor: 'bg-rose-100 text-rose-800 border-rose-300 font-semibold animate-pulse',
       headline: t('weather.thunderstorm.headline'),
       description: t('weather.thunderstorm.description'),
-      subText: t('weather.thunderstorm.subText')
+      subText: t('weather.thunderstorm.subText', { time: lastScannedAt })
     },
     typhoon: {
       label: t('weather.typhoon.label'),

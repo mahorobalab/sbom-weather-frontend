@@ -60,7 +60,7 @@
       "label": "雷雨（緊急警報）",
       "headline": "雷雨警報発令！極めて深刻な脆弱性を検知",
       "description": "認証なしで外部攻撃が成立する重大な脆弱性（CVSS 9.0+）が含まれています。大至急パッチを適用してください！",
-      "subText": "2026/10/21 深夜公開の緊急パッチ対象"
+      "subText": "最終スキャン: {{time}} (緊急パッチ対象)"
     },
     "typhoon": {
       "label": "台風（放置警戒）",
@@ -155,10 +155,12 @@
     "verificationFailed": "対象URLに認証タグまたはファイルが見つかりませんでした。",
     "viewGuide": "導入手順を見る",
     "planUsage": "プラン: {{plan}} ({{current}} / {{max}} サイト利用中)",
-    "upgradePlanBtn": "アップグレード"
+    "upgradePlanBtn": "アップグレード",
+    "siteIdLabel": "サイト識別ID:"
   },
   "integration": {
     "title": "クイック導入ガイド",
+    "siteIdLabel": "サイト識別ID (Site ID):",
     "subtitle": "お使いの環境を選択し、{{siteName}} の脆弱性監視を始めましょう",
     "verifiedNotice": "サーバーの所有権が正常に確認されました！以下の手順に従って、日々の自動脆弱性監視を開始してください。",
     "tabWordpress": "WordPress",

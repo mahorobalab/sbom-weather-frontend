@@ -1,4 +1,44 @@
-import type { ProjectSite, TeamMember } from './types';
+import type { ProjectSite, TeamMember, DayForecast } from './types';
+
+const DAY_KEYS = [
+  'forecast.days.sun',
+  'forecast.days.mon',
+  'forecast.days.tue',
+  'forecast.days.wed',
+  'forecast.days.thu',
+  'forecast.days.fri',
+  'forecast.days.sat'
+] as const;
+
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+export function applyDynamic7DayDates(forecast: DayForecast[], baseDate: Date = new Date()): DayForecast[] {
+  const total = forecast.length || 7;
+  return forecast.map((item, idx) => {
+    const daysAgo = total - 1 - idx;
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() - daysAgo);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const dow = d.getDay();
+    const isToday = daysAgo === 0;
+
+    return {
+      ...item,
+      date: `${mm}/${dd}`,
+      dayLabel: isToday ? 'Today' : DAY_LABELS[dow],
+      dayLabelKey: isToday ? 'forecast.days.today' : DAY_KEYS[dow]
+    };
+  });
+}
+
+const formatTodayDateTime = (timeStr: string): string => {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${timeStr}`;
+};
 
 export const INITIAL_PROJECTS: ProjectSite[] = [
   {
@@ -11,7 +51,7 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
     isVerified: true,
     verificationToken: 'ninja-site-verification=ec99f1a23b4c',
     currentWeather: 'thunderstorm',
-    lastScannedAt: '2026-10-22 18:00',
+    lastScannedAt: formatTodayDateTime('06:00'),
     daysUnresolved: 1,
     dependencies: [
       {
@@ -28,7 +68,7 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
             packageName: 'php',
             affectedVersion: '< 8.2.25',
             fixedVersion: '8.2.25 / 8.3.13',
-            detectedAt: '2026-10-21 23:05',
+            detectedAt: formatTodayDateTime('00:05'),
             description:
               'Buffer overflow in specific URL parameter processing. Attackers can seize server privileges without authentication.',
             descriptionKey: 'mock.vulnPhpDesc'
@@ -48,15 +88,15 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
         vulnerabilities: []
       }
     ],
-    forecast: [
-      { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
-      { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
-      { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
-      { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
-      { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
-      { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'thunderstorm', summary: 'Late night 23:00 Emergency patch released (CVSS 9.2)', summaryKey: 'forecast.summaries.patchAlert', vulnerabilityCount: 1 },
-      { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'thunderstorm', summary: 'Heavy rain warning in effect: Urgent patch required', summaryKey: 'forecast.summaries.stormAlert', vulnerabilityCount: 1 }
-    ]
+    forecast: applyDynamic7DayDates([
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Safe, no anomalies', summaryKey: 'forecast.summaries.safe', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'thunderstorm', summary: 'Late night 23:00 Emergency patch released (CVSS 9.2)', summaryKey: 'forecast.summaries.patchAlert', vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'thunderstorm', summary: 'Heavy rain warning in effect: Urgent patch required', summaryKey: 'forecast.summaries.stormAlert', vulnerabilityCount: 1 }
+    ])
   },
   {
     id: 'proj-legacy-hanko',
@@ -68,7 +108,7 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
     isVerified: true,
     verificationToken: 'ninja-site-verification=hk77a88b99c0',
     currentWeather: 'typhoon',
-    lastScannedAt: '2026-10-22 17:30',
+    lastScannedAt: formatTodayDateTime('06:00'),
     daysUnresolved: 12,
     dependencies: [
       {
@@ -85,7 +125,7 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
             packageName: 'wordpress-core',
             affectedVersion: '< 6.5.4',
             fixedVersion: '6.5.4',
-            detectedAt: '2026-10-10 14:00',
+            detectedAt: '2026-10-25 14:00',
             description:
               'Left unaddressed for over 10 days. High risk of direct database tampering from external sources.',
             descriptionKey: 'mock.vulnWpDesc'
@@ -99,15 +139,15 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
         vulnerabilities: []
       }
     ],
-    forecast: [
-      { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'rain', summary: 'Unaddressed 6 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 6 }, vulnerabilityCount: 1 },
-      { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'typhoon', summary: 'Unaddressed 7 days reached (Degraded to Typhoon)', summaryKey: 'forecast.summaries.typhoonArrival', vulnerabilityCount: 1 },
-      { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'typhoon', summary: 'Unaddressed 8 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 8 }, vulnerabilityCount: 1 },
-      { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'typhoon', summary: 'Unaddressed 9 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 9 }, vulnerabilityCount: 1 },
-      { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'typhoon', summary: 'Unaddressed 10 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 10 }, vulnerabilityCount: 1 },
-      { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'typhoon', summary: 'Unaddressed 11 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 11 }, vulnerabilityCount: 1 },
-      { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'typhoon', summary: 'Direct typhoon hit: Consult your maintenance vendor immediately!', summaryKey: 'forecast.summaries.typhoonHit', vulnerabilityCount: 1 }
-    ]
+    forecast: applyDynamic7DayDates([
+      { date: '', dayLabel: '', weather: 'rain', summary: 'Unaddressed 6 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 6 }, vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'typhoon', summary: 'Unaddressed 7 days reached (Degraded to Typhoon)', summaryKey: 'forecast.summaries.typhoonArrival', vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'typhoon', summary: 'Unaddressed 8 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 8 }, vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'typhoon', summary: 'Unaddressed 9 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 9 }, vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'typhoon', summary: 'Unaddressed 10 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 10 }, vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'typhoon', summary: 'Unaddressed 11 days elapsed', summaryKey: 'forecast.summaries.daysElapsed', summaryParams: { days: 11 }, vulnerabilityCount: 1 },
+      { date: '', dayLabel: '', weather: 'typhoon', summary: 'Direct typhoon hit: Consult your maintenance vendor immediately!', summaryKey: 'forecast.summaries.typhoonHit', vulnerabilityCount: 1 }
+    ])
   },
   {
     id: 'proj-modern-app',
@@ -119,22 +159,22 @@ export const INITIAL_PROJECTS: ProjectSite[] = [
     isVerified: true,
     verificationToken: 'ninja-site-verification=lp1100223344',
     currentWeather: 'sunny',
-    lastScannedAt: '2026-10-22 18:20',
+    lastScannedAt: formatTodayDateTime('06:00'),
     daysUnresolved: 0,
     dependencies: [
       { name: 'vite', version: '5.4.10', ecosystem: 'npm', vulnerabilities: [] },
       { name: 'react', version: '18.3.1', ecosystem: 'npm', vulnerabilities: [] },
       { name: 'tailwindcss', version: '3.4.14', ecosystem: 'npm', vulnerabilities: [] }
     ],
-    forecast: [
-      { date: '10/16', dayLabel: 'Thu', dayLabelKey: 'forecast.days.thu', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
-      { date: '10/17', dayLabel: 'Fri', dayLabelKey: 'forecast.days.fri', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
-      { date: '10/18', dayLabel: 'Sat', dayLabelKey: 'forecast.days.sat', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
-      { date: '10/19', dayLabel: 'Sun', dayLabelKey: 'forecast.days.sun', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
-      { date: '10/20', dayLabel: 'Mon', dayLabelKey: 'forecast.days.mon', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
-      { date: '10/21', dayLabel: 'Tue', dayLabelKey: 'forecast.days.tue', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
-      { date: '10/22', dayLabel: 'Today', dayLabelKey: 'forecast.days.today', weather: 'sunny', summary: 'Clear skies today: System in optimal health', summaryKey: 'forecast.summaries.cleanSystem', vulnerabilityCount: 0 }
-    ]
+    forecast: applyDynamic7DayDates([
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies, no anomalies', summaryKey: 'forecast.summaries.sunny', vulnerabilityCount: 0 },
+      { date: '', dayLabel: '', weather: 'sunny', summary: 'Clear skies today: System in optimal health', summaryKey: 'forecast.summaries.cleanSystem', vulnerabilityCount: 0 }
+    ])
   }
 ];
 
