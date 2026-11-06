@@ -303,5 +303,12 @@
       "openGuide": "View Integration Guide",
       "statusConnected": "Ready to Connect"
     }
+  },
+  "demo": {
+    "badge": "DEMO MODE",
+    "bannerTitle": "Viewing Interactive Demo Dashboard",
+    "bannerDesc": "Currently displaying sample site diagnostics. Drop your lockfile at the bottom of the page for an instant test, or sign in to monitor your own sites.",
+    "loginCta": "Sign in with Google to Manage Your Sites",
+    "tableBadge": "DEMO SAMPLE DATA"
   }
 }

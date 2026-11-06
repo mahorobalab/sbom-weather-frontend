@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, AlertTriangle, Download } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Download, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency, ProjectSite } from '../types';
 import { downloadCycloneDXFile } from '../lib/cyclonedx';
@@ -7,9 +7,14 @@ import { downloadCycloneDXFile } from '../lib/cyclonedx';
 interface DependencyTableProps {
   dependencies: Dependency[];
   project?: ProjectSite;
+  isDemoMode?: boolean;
 }
 
-export const DependencyTable: React.FC<DependencyTableProps> = ({ dependencies, project }) => {
+export const DependencyTable: React.FC<DependencyTableProps> = ({
+  dependencies,
+  project,
+  isDemoMode = false
+}) => {
   const { t } = useTranslation();
 
   const handleExport = () => {
@@ -34,7 +39,15 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({ dependencies, 
     <div className="rounded-2xl bg-white p-6 border border-slate-200/80 shadow-xs">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h3 className="text-base font-bold text-slate-900">{t('table.title')}</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-bold text-slate-900">{t('table.title')}</h3>
+            {isDemoMode && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold tracking-wide uppercase">
+                <Eye className="w-3 h-3 text-amber-600" />
+                <span>{t('demo.tableBadge')}</span>
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">{t('table.detectedCount', { count: dependencies.length })}</p>
         </div>
 
