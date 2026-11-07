@@ -1,5 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, OAuthProvider, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -15,6 +15,10 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 const googleProvider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider('microsoft.com');
+microsoftProvider.setCustomParameters({
+  prompt: 'select_account',
+});
 
 try {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -23,4 +27,4 @@ try {
   console.warn('Firebase initialization skipped or failed:', error);
 }
 
-export { app, auth, googleProvider };
+export { app, auth, googleProvider, microsoftProvider };

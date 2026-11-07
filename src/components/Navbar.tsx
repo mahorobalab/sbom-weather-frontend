@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { PLAN_CONFIGS, type ProjectSite, type PlanTier } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { LoginModal } from './LoginModal';
 
 interface NavbarProps {
   sites: ProjectSite[];
@@ -14,6 +15,7 @@ interface NavbarProps {
   onSelectView: (view: 'dashboard' | 'settings') => void;
   currentPlan?: PlanTier;
   onOpenPricingModal?: () => void;
+  onOpenLoginModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -23,12 +25,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentView,
   onSelectView,
   currentPlan = 'free',
-  onOpenPricingModal
+  onOpenPricingModal,
+  onOpenLoginModal
 }) => {
   const { t } = useTranslation();
-  const { currentUser, signInWithGoogle, signOut } = useAuth();
+  const { currentUser, signOut } = useAuth();
   const [imageError, setImageError] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showInternalLoginModal, setShowInternalLoginModal] = useState(false);
+
+  const userEmail = currentUser?.email || currentUser?.providerData?.[0]?.email || '';
+  const userDisplayName = currentUser?.displayName || currentUser?.providerData?.[0]?.displayName || '';
+  const userPhotoUrl = currentUser?.photoURL || currentUser?.providerData?.[0]?.photoURL || '';
+
+  const handleOpenLogin = () => {
+    if (onOpenLoginModal) {
+      onOpenLoginModal();
+    } else {
+      setShowInternalLoginModal(true);
+    }
+  };
 
   const handleConfirmLogout = async () => {
     try {
@@ -129,22 +145,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
               {currentUser ? (
                 <div className="flex items-center gap-2.5">
-                  {currentUser.photoURL && !imageError ? (
+                  {userPhotoUrl && !imageError ? (
                     <img
-                      src={currentUser.photoURL}
-                      alt={currentUser.displayName || t('navbar.userFallback')}
+                      src={userPhotoUrl}
+                      alt={userDisplayName || t('navbar.userFallback')}
                       referrerPolicy="no-referrer"
                       onError={() => setImageError(true)}
                       className="w-8 h-8 rounded-full border border-slate-200 shadow-xs object-cover bg-slate-100"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-white text-xs font-bold shadow-xs">
-                      {(currentUser.displayName || currentUser.email || 'U').substring(0, 1).toUpperCase()}
+                      {(userDisplayName || userEmail || 'U').substring(0, 1).toUpperCase()}
                     </div>
                   )}
                   <div className="hidden sm:block text-left">
                     <div className="text-xs font-semibold text-slate-800 truncate max-w-[120px]">
-                      {currentUser.displayName || currentUser.email?.split('@')[0]}
+                      {userDisplayName || userEmail.split('@')[0] || t('navbar.userFallback')}
                     </div>
                     <button
                       onClick={() => setShowLogoutConfirm(true)}
@@ -156,7 +172,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               ) : (
                 <button
-                  onClick={() => signInWithGoogle()}
+                  onClick={handleOpenLogin}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-98 cursor-pointer"
                 >
                   <span>{t('common.login')}</span>
@@ -166,6 +182,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
       </header>
+
+      {/* Internal fallback login modal if not controlled by parent */}
+      {showInternalLoginModal && (
+        <LoginModal onClose={() => setShowInternalLoginModal(false)} />
+      )}
 
       {/* Logout confirmation dialog */}
       {showLogoutConfirm && (
@@ -177,7 +198,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <h3 className="text-base font-bold text-slate-900 mb-1">{t('navbar.logoutConfirmTitle')}</h3>
             <p className="text-xs text-slate-500 mb-6 leading-relaxed">
               {t('navbar.logoutConfirmMessage', {
-                identifier: currentUser?.email || currentUser?.displayName || t('navbar.userFallback'),
+                identifier: userEmail || userDisplayName || t('navbar.userFallback'),
               })}
             </p>
             <div className="flex items-center justify-center gap-2.5">

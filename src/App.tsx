@@ -8,10 +8,11 @@ import { DependencyTable } from './components/DependencyTable';
 import { SettingsLayout, type SettingsTab } from './components/SettingsLayout';
 import { PdfReportModal } from './components/PdfReportModal';
 import { PricingModal } from './components/PricingModal';
+import { LoginModal, GoogleIcon, MicrosoftIcon } from './components/LoginModal';
 import { INITIAL_PROJECTS, INITIAL_MEMBERS, applyDynamic7DayDates } from './mockData';
 import { useAuth } from './contexts/AuthContext';
 import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier, DayForecast } from './types';
-import { RefreshCw, Eye, LogIn } from 'lucide-react';
+import { RefreshCw, Eye } from 'lucide-react';
 
 const STORAGE_KEY_SITES = 'sbom_weather_sites_v1';
 const STORAGE_KEY_CURRENT_SITE = 'sbom_weather_current_site_id_v1';
@@ -87,7 +88,7 @@ const parseUrlPath = (): { view: 'dashboard' | 'settings'; tab: SettingsTab } =>
 
 export default function App() {
   const { t } = useTranslation();
-  const { currentUser, signInWithGoogle } = useAuth();
+  const { currentUser, signInWithGoogle, signInWithMicrosoft } = useAuth();
   const isDemoMode = !currentUser;
 
   // Authenticated user's sites and selected site ID
@@ -107,6 +108,8 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>(() => parseUrlPath().tab);
   const [members, setMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [loginModalErrorCode, setLoginModalErrorCode] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [currentPlan, setCurrentPlan] = useState<PlanTier>(() => {
     if (typeof window !== 'undefined') {
@@ -120,11 +123,14 @@ export default function App() {
 
   const buildUserHeaders = useCallback((): Record<string, string> => {
     if (!currentUser) return {};
+    const primaryEmail = currentUser.email || currentUser.providerData?.[0]?.email || '';
+    const primaryName = currentUser.displayName || currentUser.providerData?.[0]?.displayName || '';
+    const primaryPhoto = currentUser.photoURL || currentUser.providerData?.[0]?.photoURL || '';
     return {
       'X-User-Uid': currentUser.uid,
-      'X-User-Email': currentUser.email || '',
-      'X-User-Name': encodeURIComponent(currentUser.displayName || ''),
-      'X-User-Photo': currentUser.photoURL || ''
+      'X-User-Email': primaryEmail,
+      'X-User-Name': encodeURIComponent(primaryName),
+      'X-User-Photo': primaryPhoto
     };
   }, [currentUser]);
 
@@ -256,11 +262,33 @@ export default function App() {
   }, []);
 
   const navigateTo = (view: 'dashboard' | 'settings', tab: SettingsTab = settingsTab) => {
+    if (view === 'settings' && !currentUser) {
+      setIsLoginModalOpen(true);
+      return;
+    }
     setCurrentView(view);
     setSettingsTab(tab);
     const targetUrl = view === 'settings' ? `/config/${tab}` : '/';
     if (window.location.pathname !== targetUrl) {
       window.history.pushState({ view, tab }, '', targetUrl);
+    }
+  };
+
+  const handleQuickProviderSignIn = async (provider: 'google' | 'microsoft') => {
+    try {
+      setLoginModalErrorCode(null);
+      if (provider === 'google') {
+        await signInWithGoogle();
+      } else {
+        await signInWithMicrosoft();
+      }
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        return;
+      }
+      setLoginModalErrorCode(code || 'unknown');
+      setIsLoginModalOpen(true);
     }
   };
 
@@ -436,6 +464,7 @@ export default function App() {
         onSelectView={(v) => navigateTo(v, settingsTab)}
         currentPlan={currentPlan}
         onOpenPricingModal={() => handleOpenUpgradeModal(null)}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -444,7 +473,7 @@ export default function App() {
           <>
             {/* Logged-out Demo Mode Banner */}
             {isDemoMode && (
-              <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/70 to-indigo-50/60 border border-amber-200/90 p-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+              <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/70 to-indigo-50/60 border border-amber-200/90 p-4 sm:px-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs">
                 <div className="flex items-start gap-3.5">
                   <div className="p-2 rounded-xl bg-amber-100 text-amber-700 border border-amber-200 flex-shrink-0 mt-0.5">
                     <Eye className="w-5 h-5" />
@@ -464,13 +493,22 @@ export default function App() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => signInWithGoogle()}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer whitespace-nowrap flex-shrink-0"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>{t('demo.loginCta')}</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleQuickProviderSignIn('google')}
+                    className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 hover:border-slate-300 text-xs font-bold shadow-2xs transition-all active:scale-98 cursor-pointer whitespace-nowrap"
+                  >
+                    <GoogleIcon className="w-4 h-4" />
+                    <span>{t('demo.loginWithGoogle')}</span>
+                  </button>
+                  <button
+                    onClick={() => handleQuickProviderSignIn('microsoft')}
+                    className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer whitespace-nowrap"
+                  >
+                    <MicrosoftIcon className="w-4 h-4" />
+                    <span>{t('demo.loginWithMicrosoft')}</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -546,6 +584,17 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Login Provider Selection Modal */}
+      {isLoginModalOpen && (
+        <LoginModal
+          initialErrorCode={loginModalErrorCode}
+          onClose={() => {
+            setIsLoginModalOpen(false);
+            setLoginModalErrorCode(null);
+          }}
+        />
+      )}
 
       {/* Freemium Pricing & Upgrade Modal */}
       {isPricingModalOpen && (
