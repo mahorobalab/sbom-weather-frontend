@@ -322,15 +322,29 @@ export default function App() {
   const currentSite: ProjectSite | undefined =
     activeSites.find((s) => s.id === activeSiteId) || activeSites[0];
 
-  // Handler invoked when a file is parsed through the drag-and-drop zone
-  const handleFileParsed = (fileName: string, parsedDeps: Dependency[], isVulnerable: boolean) => {
-    const newWeather: WeatherStatus = isVulnerable ? 'thunderstorm' : 'sunny';
+  // Handler invoked when a file or WP Site Health text is parsed through the drag-and-drop zone
+  const handleFileParsed = (
+    fileName: string,
+    parsedDeps: Dependency[],
+    isVulnerable: boolean,
+    weatherOverride?: WeatherStatus,
+    ecosystemOverride?: 'composer' | 'npm' | 'wordpress'
+  ) => {
+    const newWeather: WeatherStatus = weatherOverride || (isVulnerable ? 'thunderstorm' : 'sunny');
+    const resolvedEco: 'composer' | 'npm' | 'wordpress' =
+      ecosystemOverride || parsedDeps[0]?.ecosystem || 'composer';
+    const totalVulnCount = parsedDeps.reduce(
+      (sum, d) => sum + (d.vulnerabilities?.length || 0),
+      0
+    );
+    const effectiveVulnCount = totalVulnCount > 0 ? totalVulnCount : isVulnerable ? 1 : 0;
+
     if (!currentSite) {
       const uploadedSite: ProjectSite = {
         id: 'site_manual_upload',
         name: fileName,
         url: 'http://localhost',
-        ecosystem: parsedDeps[0]?.ecosystem === 'npm' ? 'npm' : 'composer',
+        ecosystem: resolvedEco,
         syncMethod: 'actions',
         isVerified: true,
         verificationToken: 'sbw_live_manual_upload',
@@ -338,7 +352,7 @@ export default function App() {
         lastScannedAt: t('dashboard.lastScannedJustNow'),
         daysUnresolved: 0,
         dependencies: parsedDeps,
-        forecast: buildDefaultForecast(newWeather, isVulnerable ? 1 : 0)
+        forecast: buildDefaultForecast(newWeather, effectiveVulnCount)
       };
       setUserSites([uploadedSite]);
       setUserSiteId(uploadedSite.id);
@@ -350,9 +364,13 @@ export default function App() {
         return {
           ...f,
           weather: newWeather,
-          summary: isVulnerable ? 'Upload analysis: Emergency vulnerability detected!' : 'Upload analysis: No anomalies (safe)',
-          summaryKey: isVulnerable ? 'forecast.summaries.uploadVulnerable' : 'forecast.summaries.uploadSafe',
-          vulnerabilityCount: isVulnerable ? 1 : 0
+          summary: isVulnerable
+            ? 'Upload analysis: Emergency vulnerability detected!'
+            : 'Upload analysis: No anomalies (safe)',
+          summaryKey: isVulnerable
+            ? 'forecast.summaries.uploadVulnerable'
+            : 'forecast.summaries.uploadSafe',
+          vulnerabilityCount: effectiveVulnCount
         };
       }
       return f;
@@ -363,6 +381,7 @@ export default function App() {
         s.id === currentSite.id
           ? {
               ...s,
+              ecosystem: resolvedEco,
               currentWeather: newWeather,
               lastScannedAt: t('dashboard.lastScannedJustNow'),
               dependencies: parsedDeps,

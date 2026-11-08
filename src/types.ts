@@ -18,6 +18,11 @@ export interface Dependency {
   name: string;
   version: string;
   ecosystem: 'composer' | 'npm' | 'wordpress';
+  componentType?: 'core' | 'runtime' | 'plugin' | 'theme' | 'package';
+  active?: boolean;
+  displayName?: string;
+  needsSlugResolution?: boolean;
+  latestVersion?: string;
   vulnerabilities: Vulnerability[];
 }
 
