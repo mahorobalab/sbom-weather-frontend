@@ -18,7 +18,7 @@ import { IntegrationGuideModal } from './IntegrationGuideModal';
 export type SettingsTab = 'sites' | 'users' | 'billing' | 'integrations';
 
 interface SettingsLayoutProps {
-  currentSite: ProjectSite;
+  currentSite?: ProjectSite;
   sites: ProjectSite[];
   members: TeamMember[];
   currentPlan: PlanTier;
@@ -27,6 +27,8 @@ interface SettingsLayoutProps {
   onBackToDashboard: () => void;
   onAddSite: (site: Partial<ProjectSite>) => void;
   onVerifySite: (siteId: string) => void;
+  onRenameSite: (siteId: string, newName: string) => void;
+  onDeleteSite: (siteId: string) => void;
   onAddMember: (member: Partial<TeamMember>) => void;
   onRemoveMember: (id: string) => void;
   onOpenUpgradeModal: (reason: 'site_limit' | 'feature_locked' | null) => void;
@@ -42,6 +44,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   onBackToDashboard,
   onAddSite,
   onVerifySite,
+  onRenameSite,
+  onDeleteSite,
   onAddMember,
   onRemoveMember,
   onOpenUpgradeModal
@@ -83,7 +87,9 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
 
         <div className="px-3 pt-2 pb-2.5 border-t border-slate-100">
           <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">{t('settings.title')}</h2>
-          <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">{currentSite.name}</p>
+          <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+            {currentSite ? currentSite.name : t('sites.noSitesShort')}
+          </p>
         </div>
 
         {/* Sidebar Nav Items */}
@@ -116,6 +122,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
             sites={sites}
             onAddSite={onAddSite}
             onVerifySite={onVerifySite}
+            onRenameSite={onRenameSite}
+            onDeleteSite={onDeleteSite}
             currentPlan={currentPlan}
             onOpenUpgradeModal={onOpenUpgradeModal}
           />
@@ -273,7 +281,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         <IntegrationGuideModal
           isOpen={isGuideOpen}
           onClose={() => setIsGuideOpen(false)}
-          site={currentSite}
+          site={currentSite || null}
         />
       )}
     </div>

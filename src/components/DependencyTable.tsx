@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShieldCheck, AlertTriangle, Download, Eye } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ShieldCheck, AlertTriangle, Download, Eye, Search, ExternalLink, HelpCircle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency, ProjectSite } from '../types';
 import { downloadCycloneDXFile } from '../lib/cyclonedx';
@@ -16,6 +16,22 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
   isDemoMode = false
 }) => {
   const { t } = useTranslation();
+  const [showCveHelp, setShowCveHelp] = useState(false);
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const helpBtnRef = useRef<HTMLButtonElement>(null);
+
+  const handleToggleCveHelp = () => {
+    if (!showCveHelp && helpBtnRef.current) {
+      const rect = helpBtnRef.current.getBoundingClientRect();
+      const popupWidth = 340;
+      const clampedLeft = Math.max(16, Math.min(rect.left - 120, window.innerWidth - popupWidth - 16));
+      setPopupPos({
+        top: rect.bottom + 8,
+        left: clampedLeft
+      });
+    }
+    setShowCveHelp((prev) => !prev);
+  };
 
   const handleExport = () => {
     const targetProject: ProjectSite = project || {
@@ -68,7 +84,25 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
               <th className="py-3 px-4 rounded-l-lg">{t('table.packageName')}</th>
               <th className="py-3 px-4">{t('table.currentVersion')}</th>
               <th className="py-3 px-4">{t('table.status')}</th>
-              <th className="py-3 px-4">{t('table.cveIdentifier')}</th>
+              <th className="py-3 px-4">
+                <div className="inline-flex items-center gap-1.5">
+                  <span>{t('table.cveIdentifier')}</span>
+                  <button
+                    ref={helpBtnRef}
+                    type="button"
+                    onClick={handleToggleCveHelp}
+                    title={t('table.cveHelpTooltip')}
+                    aria-label={t('table.cveHelpTooltip')}
+                    className={`inline-flex items-center justify-center w-4 h-4 rounded-full transition-colors cursor-pointer ${
+                      showCveHelp
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'
+                    }`}
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </th>
               <th className="py-3 px-4 rounded-r-lg">{t('table.recommendation')}</th>
             </tr>
           </thead>
@@ -105,11 +139,22 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
                   <td className="py-3.5 px-4">
                     {hasVuln ? (
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-rose-600 font-bold">{vuln.id}</span>
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-bold border border-rose-200">
                             CVSS {vuln.cvss}
                           </span>
+                          <a
+                            href={`https://www.google.com/search?q=${encodeURIComponent(vuln.id)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t('table.searchCveTooltip', { id: vuln.id })}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 text-[10px] font-sans font-semibold shadow-2xs transition-colors"
+                          >
+                            <Search className="w-3 h-3" />
+                            <span>{t('table.searchCve')}</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                          </a>
                         </div>
                         <p className="text-xs text-slate-500 font-sans mt-0.5 max-w-xs truncate" title={vulnTitle}>
                           {vulnTitle}
@@ -136,6 +181,43 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {showCveHelp && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowCveHelp(false)}
+          />
+          <div
+            style={{ top: `${popupPos.top}px`, left: `${popupPos.left}px` }}
+            className="fixed z-50 w-85 max-w-[calc(100vw-2rem)] rounded-xl bg-white border border-slate-200 shadow-xl p-4 text-left font-sans animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-slate-100">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                <HelpCircle className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>{t('table.cveHelpTitle')}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCveHelp(false)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs leading-relaxed">
+              <div>
+                <p className="font-bold text-rose-700 mb-0.5">{t('table.cveHelpCveTitle')}</p>
+                <p className="text-slate-600">{t('table.cveHelpCveDesc')}</p>
+              </div>
+              <div className="pt-2 border-t border-slate-100">
+                <p className="font-bold text-slate-800 mb-0.5">{t('table.cveHelpCvssTitle')}</p>
+                <p className="text-slate-600">{t('table.cveHelpCvssDesc')}</p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

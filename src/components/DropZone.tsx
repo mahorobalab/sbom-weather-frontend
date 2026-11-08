@@ -194,18 +194,21 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
         },
         components: [
           {
-            type: 'library',
+            'bom-ref': 'pkg:generic/php@8.2.14',
+            type: 'platform',
             name: 'php',
             version: '8.2.14',
-            purl: 'pkg:composer/php@8.2.14'
+            purl: 'pkg:generic/php@8.2.14'
           },
           {
+            'bom-ref': 'pkg:composer/laravel/framework@10.35.0',
             type: 'library',
             name: 'laravel/framework',
             version: '10.35.0',
             purl: 'pkg:composer/laravel/framework@10.35.0'
           },
           {
+            'bom-ref': 'pkg:composer/monolog/monolog@3.5.0',
             type: 'library',
             name: 'monolog/monolog',
             version: '3.5.0',

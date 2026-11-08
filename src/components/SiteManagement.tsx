@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
-import { Globe, Plus, ShieldCheck, AlertCircle, Copy, Check, Loader2, BookOpen, Sparkles } from 'lucide-react';
+import {
+  Globe,
+  Plus,
+  ShieldCheck,
+  AlertCircle,
+  Copy,
+  Check,
+  Loader2,
+  BookOpen,
+  Sparkles,
+  Pencil,
+  Trash2,
+  Lock,
+  X,
+  CalendarClock
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PLAN_CONFIGS, type ProjectSite, type PlanTier } from '../types';
 import { IntegrationGuideModal } from './IntegrationGuideModal';
@@ -8,6 +23,8 @@ interface SiteManagementProps {
   sites: ProjectSite[];
   onAddSite: (site: Partial<ProjectSite>) => void;
   onVerifySite?: (siteId: string) => void;
+  onRenameSite?: (siteId: string, newName: string) => void;
+  onDeleteSite?: (siteId: string) => void;
   currentPlan?: PlanTier;
   onOpenUpgradeModal?: (reason: 'site_limit' | null) => void;
 }
@@ -16,6 +33,8 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
   sites,
   onAddSite,
   onVerifySite,
+  onRenameSite,
+  onDeleteSite,
   currentPlan = 'free',
   onOpenUpgradeModal
 }) => {
@@ -28,6 +47,34 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
   const [verifyingSiteId, setVerifyingSiteId] = useState<string | null>(null);
   const [selectedSiteForGuide, setSelectedSiteForGuide] = useState<ProjectSite | null>(null);
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+
+  // State for inline display name editing
+  const [editingSiteId, setEditingSiteId] = useState<string | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState('');
+
+  // State for site deletion confirmation modal
+  const [siteToDelete, setSiteToDelete] = useState<ProjectSite | null>(null);
+
+  const handleStartEditName = (site: ProjectSite, currentDisplayName: string) => {
+    setEditingSiteId(site.id);
+    setEditingNameValue(currentDisplayName);
+  };
+
+  const handleSaveEditName = (siteId: string) => {
+    const trimmed = editingNameValue.trim();
+    if (trimmed && onRenameSite) {
+      onRenameSite(siteId, trimmed);
+    }
+    setEditingSiteId(null);
+    setEditingNameValue('');
+  };
+
+  const handleConfirmDeleteSite = () => {
+    if (siteToDelete && onDeleteSite) {
+      onDeleteSite(siteToDelete.id);
+    }
+    setSiteToDelete(null);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,19 +254,89 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
       )}
 
       <div className="space-y-3">
+        {sites.length === 0 && !isAdding && (
+          <div className="p-8 rounded-xl bg-slate-50/70 border border-dashed border-slate-200 text-center">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto mb-3">
+              <Globe className="w-5 h-5" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-900">{t('sites.emptyTitle')}</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
+              {t('sites.emptyDesc')}
+            </p>
+            <button
+              onClick={() => setIsAdding(true)}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('sites.addNewSite')}</span>
+            </button>
+          </div>
+        )}
         {sites.map((site) => {
           const displayName = site.nameKey ? t(site.nameKey as any) : site.name;
           const isVerifying = verifyingSiteId === site.id;
+          const isEditingName = editingSiteId === site.id;
+          const createdDateStr = site.createdAt
+            ? new Date(site.createdAt * 1000).toLocaleString('sv-SE').slice(0, 16).replace('-', '/').replace('-', '/')
+            : null;
+          const expiresDateStr = site.expiresAt
+            ? new Date(site.expiresAt * 1000).toISOString().split('T')[0]
+            : null;
 
           return (
             <div key={site.id} className="p-4 rounded-xl bg-white border border-slate-200/90 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs hover:border-slate-300 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+              <div className="flex items-start sm:items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0 mt-0.5 sm:mt-0">
                   <Globe className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-900 text-sm">{displayName}</span>
+                    {isEditingName ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={editingNameValue}
+                          onChange={(e) => setEditingNameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEditName(site.id);
+                            if (e.key === 'Escape') setEditingSiteId(null);
+                          }}
+                          autoFocus
+                          className="px-2.5 py-1 rounded-lg bg-white border border-indigo-400 text-slate-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEditName(site.id)}
+                          title={t('common.save')}
+                          className="p-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingSiteId(null)}
+                          title={t('common.cancel')}
+                          className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 group">
+                        <span className="font-bold text-slate-900 text-sm">{displayName}</span>
+                        {onRenameSite && (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditName(site, String(displayName))}
+                            title={t('sites.editNameTooltip')}
+                            className="p-1 rounded-md text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 font-mono uppercase">
                       {site.ecosystem}
                     </span>
@@ -234,8 +351,26 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
                         {t('sites.ownershipRequired')}
                       </span>
                     )}
+                    {createdDateStr && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
+                        <span>{t('sites.registeredAt', { date: createdDateStr })}</span>
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
+                      <CalendarClock className="w-3 h-3 text-slate-400" />
+                      <span>
+                        {expiresDateStr
+                          ? t('sites.expiresDate', { date: expiresDateStr })
+                          : t('sites.expiresUnlimited')}
+                      </span>
+                    </span>
                   </div>
-                  <div className="text-xs text-slate-500 font-mono mt-0.5">{site.url}</div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono mt-0.5" title={t('sites.urlLockedTooltip')}>
+                    <span className="truncate">{site.url}</span>
+                    <Lock className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                  </div>
+
                   <div className="flex items-center gap-2 flex-wrap mt-1.5 text-[11px] font-mono">
                     <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
                       <span className="text-slate-500">{t('sites.siteIdLabel')}</span>
@@ -266,7 +401,7 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
               </div>
 
               {/* Actions Area */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                 {site.isVerified ? (
                   /* Verified: View Integration Guide */
                   <button
@@ -309,11 +444,57 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
                     </button>
                   </>
                 )}
+
+                {onDeleteSite && (
+                  <button
+                    type="button"
+                    onClick={() => setSiteToDelete(site)}
+                    title={t('sites.deleteSiteTitle')}
+                    className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Delete Site Confirmation Modal */}
+      {siteToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-xl p-6 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 shadow-2xs">
+              <Trash2 className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mb-1">
+              {t('sites.deleteConfirmTitle')}
+            </h3>
+            <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+              {t('sites.deleteConfirmDesc', {
+                name: siteToDelete.nameKey ? t(siteToDelete.nameKey as any) : siteToDelete.name
+              })}
+            </p>
+            <div className="flex items-center justify-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSiteToDelete(null)}
+                className="flex-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteSite}
+                className="flex-1 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
+              >
+                {t('sites.deleteConfirmBtn')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Integration Guide Modal */}
       <IntegrationGuideModal

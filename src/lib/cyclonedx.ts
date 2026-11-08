@@ -1,12 +1,20 @@
 import type { ProjectSite, Dependency, Vulnerability } from '../types';
 
 export interface CycloneDXComponent {
+  'bom-ref'?: string;
   type: string;
   name: string;
   version: string;
   group?: string;
   purl?: string;
   description?: string;
+}
+
+export interface CycloneDXToolComponent {
+  type?: string;
+  author?: string;
+  name: string;
+  version?: string;
 }
 
 export interface CycloneDXVulnerabilityRating {
@@ -32,7 +40,12 @@ export interface CycloneDXBom {
   version: number;
   metadata: {
     timestamp: string;
-    tools?: Array<{ vendor?: string; name: string; version?: string }>;
+    tools?:
+      | Array<{ vendor?: string; name: string; version?: string }>
+      | {
+          components?: CycloneDXToolComponent[];
+          services?: any[];
+        };
     component?: {
       type: string;
       name: string;
@@ -51,6 +64,11 @@ export function generatePurl(ecosystem: string, name: string, version: string): 
   const safeName = name.trim();
   const lowerEco = ecosystem.toLowerCase();
 
+  // PHP runtime is generic across all ecosystems
+  if (safeName.toLowerCase() === 'php') {
+    return `pkg:generic/php@${cleanVersion}`;
+  }
+
   if (lowerEco === 'npm' || lowerEco === 'javascript') {
     if (safeName.startsWith('@')) {
       const parts = safeName.split('/');
@@ -62,6 +80,9 @@ export function generatePurl(ecosystem: string, name: string, version: string): 
   }
 
   if (lowerEco === 'wordpress' || lowerEco === 'wp') {
+    if (safeName.toLowerCase() === 'wordpress') {
+      return `pkg:generic/wordpress@${cleanVersion}`;
+    }
     return `pkg:wordpress/${safeName}@${cleanVersion}`;
   }
 
@@ -172,6 +193,7 @@ export function exportToCycloneDX(site: ProjectSite): string {
 
   const components: CycloneDXComponent[] = site.dependencies.map((dep) => {
     const purl = generatePurl(dep.ecosystem, dep.name, dep.version);
+    const bomRef = purl;
 
     // Map vulnerabilities if present
     if (dep.vulnerabilities && dep.vulnerabilities.length > 0) {
@@ -191,13 +213,17 @@ export function exportToCycloneDX(site: ProjectSite): string {
             }
           ],
           description: v.description,
-          affects: [{ ref: purl }]
+          affects: [{ ref: bomRef }]
         });
       });
     }
 
+    const isPlatform = dep.name.toLowerCase() === 'php';
+    const isApp = dep.name.toLowerCase() === 'wordpress';
+
     return {
-      type: 'library',
+      'bom-ref': bomRef,
+      type: isPlatform ? 'platform' : isApp ? 'application' : 'library',
       name: dep.name,
       version: dep.version,
       purl
@@ -212,13 +238,16 @@ export function exportToCycloneDX(site: ProjectSite): string {
     version: 1,
     metadata: {
       timestamp,
-      tools: [
-        {
-          vendor: 'Mahoroba Lab',
-          name: 'SBOM Weather',
-          version: '1.0.0'
-        }
-      ],
+      tools: {
+        components: [
+          {
+            type: 'application',
+            author: 'Mahoroba Lab',
+            name: 'SBOM Weather',
+            version: '1.0.0'
+          }
+        ]
+      },
       component: {
         type: 'application',
         name: site.name,

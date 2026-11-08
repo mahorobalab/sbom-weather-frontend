@@ -12,12 +12,13 @@ import { LoginModal, GoogleIcon, MicrosoftIcon } from './components/LoginModal';
 import { INITIAL_PROJECTS, INITIAL_MEMBERS, applyDynamic7DayDates } from './mockData';
 import { useAuth } from './contexts/AuthContext';
 import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier, DayForecast } from './types';
-import { RefreshCw, Eye } from 'lucide-react';
+import { RefreshCw, Eye, Globe, Plus } from 'lucide-react';
 
-const STORAGE_KEY_SITES = 'sbom_weather_sites_v1';
-const STORAGE_KEY_CURRENT_SITE = 'sbom_weather_current_site_id_v1';
+const STORAGE_KEY_SITES = 'sbom_weather_user_sites_v2';
+const STORAGE_KEY_CURRENT_SITE = 'sbom_weather_user_current_site_id_v2';
 const STORAGE_KEY_PLAN = 'sbom_weather_plan_v1';
 const API_BASE_URL = 'http://localhost:8787';
+const DEMO_SITE_IDS = new Set(INITIAL_PROJECTS.map((p) => p.id));
 
 const buildDefaultForecast = (weather: WeatherStatus = 'sunny', vulnCount: number = 0): DayForecast[] =>
   applyDynamic7DayDates([
@@ -37,38 +38,40 @@ const buildDefaultForecast = (weather: WeatherStatus = 'sunny', vulnCount: numbe
     }
   ]);
 
-const loadInitialSites = (): ProjectSite[] => {
-  if (typeof window === 'undefined') return INITIAL_PROJECTS;
+const loadUserSitesFromStorage = (uid?: string): ProjectSite[] => {
+  if (typeof window === 'undefined' || !uid) return [];
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY_SITES);
+    const raw = window.localStorage.getItem(`${STORAGE_KEY_SITES}_${uid}`);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((site: ProjectSite) => ({
-          ...site,
-          forecast: applyDynamic7DayDates(
-            site.forecast?.length ? site.forecast : buildDefaultForecast(site.currentWeather, 0)
-          )
-        }));
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((site: ProjectSite) => site && site.id && !DEMO_SITE_IDS.has(site.id))
+          .map((site: ProjectSite) => ({
+            ...site,
+            forecast: applyDynamic7DayDates(
+              site.forecast?.length ? site.forecast : buildDefaultForecast(site.currentWeather, 0)
+            )
+          }));
       }
     }
   } catch {
     // ignore storage read error
   }
-  return INITIAL_PROJECTS;
+  return [];
 };
 
-const loadInitialSiteId = (initialSites: ProjectSite[]): string => {
-  if (typeof window === 'undefined') return initialSites[0].id;
+const loadUserSiteIdFromStorage = (uid: string | undefined, sites: ProjectSite[]): string => {
+  if (typeof window === 'undefined' || !uid || sites.length === 0) return sites[0]?.id || '';
   try {
-    const savedId = window.localStorage.getItem(STORAGE_KEY_CURRENT_SITE);
-    if (savedId && initialSites.some((s) => s.id === savedId)) {
+    const savedId = window.localStorage.getItem(`${STORAGE_KEY_CURRENT_SITE}_${uid}`);
+    if (savedId && sites.some((s) => s.id === savedId)) {
       return savedId;
     }
   } catch {
     // ignore storage read error
   }
-  return initialSites[0].id;
+  return sites[0]?.id || '';
 };
 
 // Parse URL path for initial view and settings subtab
@@ -91,9 +94,9 @@ export default function App() {
   const { currentUser, signInWithGoogle, signInWithMicrosoft } = useAuth();
   const isDemoMode = !currentUser;
 
-  // Authenticated user's sites and selected site ID
-  const [userSites, setUserSites] = useState<ProjectSite[]>(loadInitialSites);
-  const [userSiteId, setUserSiteId] = useState<string>(() => loadInitialSiteId(loadInitialSites()));
+  // Authenticated user's sites and selected site ID (strictly isolated per UID, never mixed with Demo sites)
+  const [userSites, setUserSites] = useState<ProjectSite[]>([]);
+  const [userSiteId, setUserSiteId] = useState<string>('');
 
   // Logged-out interactive Demo sites and selected demo site ID
   const [demoSites, setDemoSites] = useState<ProjectSite[]>(() =>
@@ -134,35 +137,47 @@ export default function App() {
     };
   }, [currentUser]);
 
-  // When user logs out, automatically return to the landing demo dashboard view
+  // Load cached user sites when currentUser changes, or reset on logout
   useEffect(() => {
-    if (!currentUser && currentView === 'settings') {
-      setCurrentView('dashboard');
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-        window.history.pushState({ view: 'dashboard', tab: settingsTab }, '', '/');
+    if (!currentUser) {
+      setUserSites([]);
+      setUserSiteId('');
+      setMembers(INITIAL_MEMBERS);
+      if (currentView === 'settings') {
+        setCurrentView('dashboard');
+        if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+          window.history.pushState({ view: 'dashboard', tab: settingsTab }, '', '/');
+        }
       }
+      return;
     }
+
+    const cachedSites = loadUserSitesFromStorage(currentUser.uid);
+    setUserSites(cachedSites);
+    setUserSiteId(loadUserSiteIdFromStorage(currentUser.uid, cachedSites));
   }, [currentUser, currentView, settingsTab]);
 
-  // Persist userSites to localStorage whenever updated
+  // Persist userSites to user-scoped localStorage whenever updated
   useEffect(() => {
+    if (!currentUser?.uid) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY_SITES, JSON.stringify(userSites));
+      window.localStorage.setItem(`${STORAGE_KEY_SITES}_${currentUser.uid}`, JSON.stringify(userSites));
     } catch {
       // ignore storage write error
     }
-  }, [userSites]);
+  }, [currentUser?.uid, userSites]);
 
-  // Persist selected userSiteId to localStorage
+  // Persist selected userSiteId to user-scoped localStorage
   useEffect(() => {
+    if (!currentUser?.uid || !userSiteId) return;
     try {
-      window.localStorage.setItem(STORAGE_KEY_CURRENT_SITE, userSiteId);
+      window.localStorage.setItem(`${STORAGE_KEY_CURRENT_SITE}_${currentUser.uid}`, userSiteId);
     } catch {
       // ignore storage write error
     }
-  }, [userSiteId]);
+  }, [currentUser?.uid, userSiteId]);
 
-  // Fetch & merge persisted sites and team members from Cloudflare D1 (APP_DB) when logged in
+  // Fetch & sync persisted sites and team members owned by this user from Cloudflare D1 (APP_DB)
   const syncSitesFromBackend = useCallback(async () => {
     if (!currentUser) return;
     const authHeaders = buildUserHeaders();
@@ -173,21 +188,20 @@ export default function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.sites) && data.sites.length > 0) {
+        if (data.success && Array.isArray(data.sites)) {
           setUserSites((prevSites) => {
-            const merged = [...prevSites];
-            for (const remoteSite of data.sites) {
-              const vulnCount = (remoteSite.dependencies || []).reduce(
-                (sum: number, d: Dependency) => sum + (d.vulnerabilities?.length || 0),
-                0
-              );
-              const idx = merged.findIndex((s) => s.id === remoteSite.id);
-              if (idx !== -1) {
-                const existing = merged[idx];
+            const remoteSites: ProjectSite[] = data.sites
+              .filter((remoteSite: any) => remoteSite && remoteSite.id && !DEMO_SITE_IDS.has(remoteSite.id))
+              .map((remoteSite: any) => {
+                const vulnCount = (remoteSite.dependencies || []).reduce(
+                  (sum: number, d: Dependency) => sum + (d.vulnerabilities?.length || 0),
+                  0
+                );
+                const existing = prevSites.find((s) => s.id === remoteSite.id);
                 const hasRemoteDeps = Array.isArray(remoteSite.dependencies) && remoteSite.dependencies.length > 0;
-                const weather = (remoteSite.currentWeather || existing.currentWeather) as WeatherStatus;
+                const weather = (remoteSite.currentWeather || existing?.currentWeather || 'sunny') as WeatherStatus;
                 const updatedForecast = applyDynamic7DayDates(
-                  existing.forecast?.length ? existing.forecast : buildDefaultForecast(weather, vulnCount)
+                  existing?.forecast?.length ? existing.forecast : buildDefaultForecast(weather, vulnCount)
                 ).map((f, fIdx, arr) =>
                   fIdx === arr.length - 1
                     ? {
@@ -199,33 +213,28 @@ export default function App() {
                     : f
                 );
 
-                merged[idx] = {
-                  ...existing,
+                return {
+                  id: remoteSite.id,
+                  name: remoteSite.name || existing?.name || remoteSite.id,
+                  url: remoteSite.url || existing?.url || 'http://localhost',
+                  ecosystem: remoteSite.ecosystem || existing?.ecosystem || 'wordpress',
+                  syncMethod: remoteSite.syncMethod || existing?.syncMethod || 'wp_plugin',
+                  isVerified: Boolean(remoteSite.isVerified ?? existing?.isVerified ?? true),
+                  verificationToken:
+                    remoteSite.verificationToken || existing?.verificationToken || `sbw_live_${remoteSite.id}`,
                   currentWeather: weather,
-                  lastScannedAt: hasRemoteDeps ? remoteSite.lastScannedAt : existing.lastScannedAt,
-                  daysUnresolved: remoteSite.daysUnresolved ?? existing.daysUnresolved,
-                  dependencies: hasRemoteDeps ? remoteSite.dependencies : existing.dependencies,
+                  lastScannedAt: hasRemoteDeps
+                    ? remoteSite.lastScannedAt
+                    : existing?.lastScannedAt || remoteSite.lastScannedAt || t('dashboard.unscanned'),
+                  daysUnresolved: remoteSite.daysUnresolved ?? existing?.daysUnresolved ?? 0,
+                  createdAt: remoteSite.createdAt ?? existing?.createdAt ?? null,
+                  expiresAt: remoteSite.expiresAt ?? existing?.expiresAt ?? null,
+                  dependencies: hasRemoteDeps ? remoteSite.dependencies : existing?.dependencies || [],
                   forecast: updatedForecast
                 };
-              } else {
-                const weather = (remoteSite.currentWeather || 'sunny') as WeatherStatus;
-                merged.unshift({
-                  id: remoteSite.id,
-                  name: remoteSite.name || remoteSite.id,
-                  url: remoteSite.url || 'http://localhost',
-                  ecosystem: remoteSite.ecosystem || 'wordpress',
-                  syncMethod: remoteSite.syncMethod || 'wp_plugin',
-                  isVerified: Boolean(remoteSite.isVerified),
-                  verificationToken: remoteSite.verificationToken || `sbw_live_${remoteSite.id}`,
-                  currentWeather: weather,
-                  lastScannedAt: remoteSite.lastScannedAt || t('dashboard.unscanned'),
-                  daysUnresolved: remoteSite.daysUnresolved || 0,
-                  dependencies: remoteSite.dependencies || [],
-                  forecast: buildDefaultForecast(weather, vulnCount)
-                });
-              }
-            }
-            return merged;
+              });
+
+            return remoteSites;
           });
         }
       }
@@ -241,7 +250,7 @@ export default function App() {
         }
       }
     } catch {
-      // Backend might be offline; keep localStorage sites intact
+      // Backend might be offline; keep user-scoped localStorage sites intact
     }
   }, [currentUser, buildUserHeaders, t]);
 
@@ -310,11 +319,32 @@ export default function App() {
   const activeSites = isDemoMode ? demoSites : userSites;
   const activeSiteId = isDemoMode ? demoSiteId : userSiteId;
   const setActiveSiteId = isDemoMode ? setDemoSiteId : setUserSiteId;
-  const currentSite = activeSites.find((s) => s.id === activeSiteId) || activeSites[0];
+  const currentSite: ProjectSite | undefined =
+    activeSites.find((s) => s.id === activeSiteId) || activeSites[0];
 
   // Handler invoked when a file is parsed through the drag-and-drop zone
-  const handleFileParsed = (_fileName: string, parsedDeps: Dependency[], isVulnerable: boolean) => {
+  const handleFileParsed = (fileName: string, parsedDeps: Dependency[], isVulnerable: boolean) => {
     const newWeather: WeatherStatus = isVulnerable ? 'thunderstorm' : 'sunny';
+    if (!currentSite) {
+      const uploadedSite: ProjectSite = {
+        id: 'site_manual_upload',
+        name: fileName,
+        url: 'http://localhost',
+        ecosystem: parsedDeps[0]?.ecosystem === 'npm' ? 'npm' : 'composer',
+        syncMethod: 'actions',
+        isVerified: true,
+        verificationToken: 'sbw_live_manual_upload',
+        currentWeather: newWeather,
+        lastScannedAt: t('dashboard.lastScannedJustNow'),
+        daysUnresolved: 0,
+        dependencies: parsedDeps,
+        forecast: buildDefaultForecast(newWeather, isVulnerable ? 1 : 0)
+      };
+      setUserSites([uploadedSite]);
+      setUserSiteId(uploadedSite.id);
+      return;
+    }
+
     const updatedForecast = currentSite.forecast.map((f, idx) => {
       if (idx === currentSite.forecast.length - 1) {
         return {
@@ -379,6 +409,8 @@ export default function App() {
       currentWeather: 'sunny',
       lastScannedAt: t('dashboard.unscanned'),
       daysUnresolved: 0,
+      createdAt: Math.floor(Date.now() / 1000),
+      expiresAt: null,
       dependencies: [],
       forecast: buildDefaultForecast('sunny', 0)
     };
@@ -421,6 +453,38 @@ export default function App() {
     );
   };
 
+  // Rename site display name (URL and Site ID remain locked)
+  const handleRenameSite = (siteId: string, newName: string) => {
+    setUserSites((prev) =>
+      prev.map((s) => (s.id === siteId ? { ...s, name: newName, nameKey: undefined } : s))
+    );
+
+    fetch(`${API_BASE_URL}/api/v1/sites`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...buildUserHeaders()
+      },
+      body: JSON.stringify({ id: siteId, name: newName })
+    }).catch(() => null);
+  };
+
+  // Delete a monitored site and remove from D1 APP_DB
+  const handleDeleteSite = (siteId: string) => {
+    setUserSites((prev) => {
+      const remaining = prev.filter((s) => s.id !== siteId);
+      if (userSiteId === siteId) {
+        setUserSiteId(remaining[0]?.id || '');
+      }
+      return remaining;
+    });
+
+    fetch(`${API_BASE_URL}/api/v1/sites?id=${encodeURIComponent(siteId)}`, {
+      method: 'DELETE',
+      headers: buildUserHeaders()
+    }).catch(() => null);
+  };
+
   // Add / remove team members (persisted to D1 /api/v1/team)
   const handleAddMember = (m: Partial<TeamMember>) => {
     const newMember: TeamMember = {
@@ -451,7 +515,11 @@ export default function App() {
     }).catch(() => null);
   };
 
-  const siteDisplayName = currentSite.nameKey ? String(t(currentSite.nameKey as any)) : currentSite.name;
+  const siteDisplayName = currentSite
+    ? currentSite.nameKey
+      ? String(t(currentSite.nameKey as any))
+      : currentSite.name
+    : '';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
@@ -512,57 +580,91 @@ export default function App() {
               </div>
             )}
 
-            {/* Top Bar for Project Context */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
-              <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">
-                    {siteDisplayName}
-                  </h1>
-                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-medium border border-slate-200 uppercase">
-                    {currentSite.ecosystem}
-                  </span>
-                  {isDemoMode && (
-                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-300 uppercase">
-                      <Eye className="w-3 h-3 text-amber-600" />
-                      <span>{t('demo.badge')}</span>
-                    </span>
-                  )}
+            {currentSite ? (
+              <>
+                {/* Top Bar for Project Context */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+                  <div>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">
+                        {siteDisplayName}
+                      </h1>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-medium border border-slate-200 uppercase">
+                        {currentSite.ecosystem}
+                      </span>
+                      {isDemoMode && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-300 uppercase">
+                          <Eye className="w-3 h-3 text-amber-600" />
+                          <span>{t('demo.badge')}</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 font-mono mt-1">
+                      <span>{currentSite.url}</span>
+                      <span>•</span>
+                      <span>{String(t('dashboard.syncMethod', { method: currentSite.syncMethod }))}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleRefreshScan}
+                      disabled={isScanning}
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
+                      <span>{isScanning ? t('dashboard.scanning') : t('dashboard.refreshScan')}</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-mono mt-1">
-                  <span>{currentSite.url}</span>
-                  <span>•</span>
-                  <span>{String(t('dashboard.syncMethod', { method: currentSite.syncMethod }))}</span>
+
+                {/* 1. Main Weather Banner (Weather Metaphor) */}
+                <WeatherBanner
+                  project={currentSite}
+                  onOpenPdfReport={() => setIsPdfModalOpen(true)}
+                />
+
+                {/* 2. Security Weather Trend (7-Day Trend) */}
+                <WeeklyForecast forecast={currentSite.forecast} />
+
+                {/* 3. Detected Packages & CVEs Table */}
+                <DependencyTable
+                  dependencies={currentSite.dependencies}
+                  project={currentSite}
+                  isDemoMode={isDemoMode}
+                />
+              </>
+            ) : (
+              /* Logged-in user with 0 sites registered */
+              <div className="rounded-2xl bg-white border border-slate-200/80 shadow-xs p-10 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto mb-3.5">
+                  <Globe className="w-6 h-6" />
+                </div>
+                <h2 className="text-base font-extrabold text-slate-900">
+                  {t('sites.emptyTitle')}
+                </h2>
+                <p className="text-xs text-slate-500 mt-1.5 max-w-md mx-auto leading-relaxed">
+                  {t('sites.emptyDesc')}
+                </p>
+                <div className="mt-5 flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => navigateTo('settings', 'sites')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-98 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('sites.addNewSite')}</span>
+                  </button>
+                  <button
+                    onClick={handleRefreshScan}
+                    disabled={isScanning}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
+                    <span>{t('dashboard.refreshScan')}</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleRefreshScan}
-                  disabled={isScanning}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
-                  <span>{isScanning ? t('dashboard.scanning') : t('dashboard.refreshScan')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 1. Main Weather Banner (Weather Metaphor) */}
-            <WeatherBanner
-              project={currentSite}
-              onOpenPdfReport={() => setIsPdfModalOpen(true)}
-            />
-
-            {/* 2. Security Weather Trend (7-Day Trend) */}
-            <WeeklyForecast forecast={currentSite.forecast} />
-
-            {/* 3. Detected Packages & CVEs Table */}
-            <DependencyTable
-              dependencies={currentSite.dependencies}
-              project={currentSite}
-              isDemoMode={isDemoMode}
-            />
+            )}
 
             {/* 4. Drag & Drop Lockfile Analysis (Moved to the bottom) */}
             <DropZone onFileParsed={handleFileParsed} />
@@ -578,6 +680,8 @@ export default function App() {
             onBackToDashboard={() => navigateTo('dashboard')}
             onAddSite={handleAddSite}
             onVerifySite={handleVerifySite}
+            onRenameSite={handleRenameSite}
+            onDeleteSite={handleDeleteSite}
             onAddMember={handleAddMember}
             onRemoveMember={handleRemoveMember}
             onOpenUpgradeModal={handleOpenUpgradeModal}
@@ -608,7 +712,7 @@ export default function App() {
       )}
 
       {/* A4 PDF Report Preview Modal */}
-      {isPdfModalOpen && (
+      {isPdfModalOpen && currentSite && (
         <PdfReportModal
           project={currentSite}
           onClose={() => setIsPdfModalOpen(false)}

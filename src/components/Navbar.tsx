@@ -9,7 +9,7 @@ import { LoginModal } from './LoginModal';
 
 interface NavbarProps {
   sites: ProjectSite[];
-  currentSite: ProjectSite;
+  currentSite?: ProjectSite;
   onSelectSite: (site: ProjectSite) => void;
   currentView: 'dashboard' | 'settings';
   onSelectView: (view: 'dashboard' | 'settings') => void;
@@ -106,23 +106,32 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Site Selector Dropdown */}
-            <div className="relative">
-              <select
-                value={currentSite.id}
-                onChange={(e) => {
-                  const selected = sites.find((s) => s.id === e.target.value);
-                  if (selected) onSelectSite(selected);
-                }}
-                className="appearance-none pl-3 pr-8 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer shadow-xs hover:border-slate-300 transition-colors"
+            {sites.length > 0 && currentSite ? (
+              <div className="relative">
+                <select
+                  value={currentSite.id}
+                  onChange={(e) => {
+                    const selected = sites.find((s) => s.id === e.target.value);
+                    if (selected) onSelectSite(selected);
+                  }}
+                  className="appearance-none pl-3 pr-8 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer shadow-xs hover:border-slate-300 transition-colors"
+                >
+                  {sites.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.currentWeather === 'sunny' ? '☀️' : s.currentWeather === 'thunderstorm' ? '⚡' : s.currentWeather === 'typhoon' ? '🌀' : '🌧️'})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            ) : (
+              <button
+                onClick={() => onSelectView('settings')}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-slate-600 text-xs font-medium transition-colors cursor-pointer"
               >
-                {sites.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.currentWeather === 'sunny' ? '☀️' : s.currentWeather === 'thunderstorm' ? '⚡' : s.currentWeather === 'typhoon' ? '🌀' : '🌧️'})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+                {t('sites.noSitesShort')}
+              </button>
+            )}
 
             {/* Language Switcher with Globe Icon */}
             <LanguageSwitcher />

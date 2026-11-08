@@ -130,7 +130,15 @@
     "upToDate": "Up to date or patched",
     "noVulnDash": "—",
     "exportCycloneDx": "Export CycloneDX (JSON)",
-    "exportCycloneDxTooltip": "Download industry-standard CycloneDX 1.5 SBOM file"
+    "exportCycloneDxTooltip": "Download industry-standard CycloneDX 1.5 SBOM file",
+    "searchCve": "Search",
+    "searchCveTooltip": "Search details for {{id}} in a new tab",
+    "cveHelpTooltip": "Show explanation of CVE ID and CVSS score",
+    "cveHelpTitle": "What are CVE IDs & CVSS Scores?",
+    "cveHelpCveTitle": "CVE Identifier (e.g. CVE-2025-14177)",
+    "cveHelpCveDesc": "A globally standardized reference ID assigned to a publicly known security flaw. Sharing this number with your developer or vendor immediately identifies the exact issue.",
+    "cveHelpCvssTitle": "CVSS (Severity Score: 0.0 – 10.0)",
+    "cveHelpCvssDesc": "An international 0–10 scale measuring how dangerous the vulnerability is. Scores of 7.0+ (HIGH) require prompt updates, and 9.0+ (CRITICAL) demand immediate emergency patching."
   },
   "sites": {
     "title": "Monitored Sites Management",
@@ -156,7 +164,19 @@
     "viewGuide": "Integration Guide",
     "planUsage": "Plan: {{plan}} ({{current}} / {{max}} sites)",
     "upgradePlanBtn": "Upgrade",
-    "siteIdLabel": "Site ID:"
+    "siteIdLabel": "Site ID:",
+    "noSitesShort": "No sites registered",
+    "emptyTitle": "No Monitored Sites Registered Yet",
+    "emptyDesc": "Click 'Add New Site' to register your web application for continuous monitoring, or drop a lockfile below for instant analysis.",
+    "editNameTooltip": "Edit site display name",
+    "urlLockedTooltip": "Site URL is locked after registration to preserve ownership verification integrity",
+    "registeredAt": "Registered: {{date}}",
+    "expiresUnlimited": "Expires: Never",
+    "expiresDate": "Expires: {{date}}",
+    "deleteSiteTitle": "Delete this site",
+    "deleteConfirmTitle": "Delete Monitored Site",
+    "deleteConfirmDesc": "Are you sure you want to remove '{{name}}'? All associated package snapshots and vulnerability history for this site will be deleted.",
+    "deleteConfirmBtn": "Delete Site"
   },
   "integration": {
     "title": "Quick Integration Guide",

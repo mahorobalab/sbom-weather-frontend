@@ -44,6 +44,8 @@ export interface ProjectSite {
   currentWeather: WeatherStatus;
   lastScannedAt: string;
   daysUnresolved: number; // 7+ days triggers typhoon alert
+  createdAt?: number | null; // UNIX epoch seconds of initial site registration
+  expiresAt?: number | null; // UNIX epoch seconds, null/undefined = unlimited (Free plan etc.)
   dependencies: Dependency[];
   forecast: DayForecast[];
 }

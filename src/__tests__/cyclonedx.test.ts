@@ -8,11 +8,15 @@ import {
 import type { ProjectSite } from '../types';
 
 describe('CycloneDX utilities', () => {
-  it('generatePurl correctly formats package URLs for composer, npm, and wordpress', () => {
+  it('generatePurl correctly formats package URLs for composer, npm, wordpress, and generic runtimes', () => {
     expect(generatePurl('composer', 'laravel/framework', '10.35.0')).toBe('pkg:composer/laravel/framework@10.35.0');
     expect(generatePurl('npm', 'express', '4.19.2')).toBe('pkg:npm/express@4.19.2');
     expect(generatePurl('npm', '@vitejs/plugin-react', '4.3.0')).toBe('pkg:npm/%40vitejs/plugin-react@4.3.0');
     expect(generatePurl('wordpress', 'contact-form-7', '5.9.0')).toBe('pkg:wordpress/contact-form-7@5.9.0');
+    // Generic runtimes & core systems
+    expect(generatePurl('wordpress', 'php', '8.2.29')).toBe('pkg:generic/php@8.2.29');
+    expect(generatePurl('composer', 'php', '8.2.14')).toBe('pkg:generic/php@8.2.14');
+    expect(generatePurl('wordpress', 'wordpress', '7.1.4')).toBe('pkg:generic/wordpress@7.1.4');
   });
 
   it('isCycloneDX accurately identifies CycloneDX payloads', () => {
@@ -92,11 +96,15 @@ describe('CycloneDX utilities', () => {
     expect(parsed.bomFormat).toBe('CycloneDX');
     expect(parsed.specVersion).toBe('1.5');
     expect(parsed.metadata.component.name).toBe('Test Project');
+    expect(parsed.metadata.tools.components[0].name).toBe('SBOM Weather');
     expect(parsed.components.length).toBe(1);
     expect(parsed.components[0].name).toBe('php');
-    expect(parsed.components[0].purl).toBe('pkg:composer/php@8.2.14');
+    expect(parsed.components[0].type).toBe('platform');
+    expect(parsed.components[0]['bom-ref']).toBe('pkg:generic/php@8.2.14');
+    expect(parsed.components[0].purl).toBe('pkg:generic/php@8.2.14');
     expect(parsed.vulnerabilities.length).toBe(1);
     expect(parsed.vulnerabilities[0].id).toBe('CVE-2026-109618');
     expect(parsed.vulnerabilities[0].ratings[0].score).toBe(9.2);
+    expect(parsed.vulnerabilities[0].affects[0].ref).toBe(parsed.components[0]['bom-ref']);
   });
 });

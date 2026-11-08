@@ -130,7 +130,15 @@
     "upToDate": "最新またはパッチ適用済",
     "noVulnDash": "—",
     "exportCycloneDx": "CycloneDX エクスポート (JSON)",
-    "exportCycloneDxTooltip": "業界標準 CycloneDX 1.5 形式の SBOM ファイルをダウンロード"
+    "exportCycloneDxTooltip": "業界標準 CycloneDX 1.5 形式の SBOM ファイルをダウンロード",
+    "searchCve": "検索",
+    "searchCveTooltip": "{{id}} の詳細情報を別ウィンドウ（新しいタブ）で検索",
+    "cveHelpTooltip": "CVE識別子とCVSSスコアについての説明を表示",
+    "cveHelpTitle": "CVE識別子 / CVSSスコアとは？",
+    "cveHelpCveTitle": "CVE識別子（例: CVE-2025-14177）",
+    "cveHelpCveDesc": "世界共通で割り振られる「セキュリティ上の弱点（脆弱性）の整理番号」です。制作会社やエンジニアにこの番号を伝えるだけで、どの問題か正確に伝わります。",
+    "cveHelpCvssTitle": "CVSS（深刻度スコア: 0.0 〜 10.0）",
+    "cveHelpCvssDesc": "その弱点が悪用された際の危険度を最大10.0で表した国際基準の数値です。7.0以上（HIGH）は早急な対応、9.0以上（CRITICAL）は緊急のパッチ適用が必要です。"
   },
   "sites": {
     "title": "監視対象サイト管理",
@@ -156,7 +164,19 @@
     "viewGuide": "導入手順を見る",
     "planUsage": "プラン: {{plan}} ({{current}} / {{max}} サイト利用中)",
     "upgradePlanBtn": "アップグレード",
-    "siteIdLabel": "サイト識別ID:"
+    "siteIdLabel": "サイト識別ID:",
+    "noSitesShort": "サイト未登録",
+    "emptyTitle": "まだ監視対象サイトが登録されていません",
+    "emptyDesc": "「新しいサイトを追加」ボタンから自社サイトのURLを登録するか、画面下部のドラッグ＆ドロップ解析でロックファイルを即座に診断できます。",
+    "editNameTooltip": "サイトの表示名を編集",
+    "urlLockedTooltip": "所有権確認の整合性維持のため、登録後のサイトURLは変更できません",
+    "registeredAt": "登録日時: {{date}}",
+    "expiresUnlimited": "有効期限: 無期限",
+    "expiresDate": "有効期限: {{date}}",
+    "deleteSiteTitle": "このサイトを削除",
+    "deleteConfirmTitle": "監視対象サイトの削除",
+    "deleteConfirmDesc": "「{{name}}」を監視対象から削除しますか？この操作により、保存されている構成パッケージおよび履歴データも削除されます。",
+    "deleteConfirmBtn": "削除する"
   },
   "integration": {
     "title": "クイック導入ガイド",
