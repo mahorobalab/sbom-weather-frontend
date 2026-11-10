@@ -19,7 +19,7 @@ import {
 } from './mockData';
 import { useAuth } from './contexts/AuthContext';
 import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier, DayForecast } from './types';
-import { RefreshCw, Eye, Globe, Plus } from 'lucide-react';
+import { RefreshCw, Eye, Globe, Plus, Zap, RotateCcw } from 'lucide-react';
 
 const STORAGE_KEY_SITES = 'sbom_weather_user_sites_v2';
 const STORAGE_KEY_CURRENT_SITE = 'sbom_weather_user_current_site_id_v2';
@@ -119,13 +119,19 @@ export default function App() {
   const [userSiteId, setUserSiteId] = useState<string>('');
 
   // Logged-out interactive Demo sites and selected demo site ID
-  const [demoSites, setDemoSites] = useState<ProjectSite[]>(() =>
+  const [demoSites] = useState<ProjectSite[]>(() =>
     INITIAL_PROJECTS.map((s) => ({
       ...s,
       forecast: applyDynamic7DayDates(s.forecast)
     }))
   );
   const [demoSiteId, setDemoSiteId] = useState<string>(INITIAL_PROJECTS[0].id);
+
+  // Instant Diagnosis Mode state (populated when user runs diagnosis from modal)
+  const [instantSite, setInstantSite] = useState<ProjectSite | null>(null);
+  const [isDiagnosisModalOpen, setIsDiagnosisModalOpen] = useState<boolean>(false);
+  const [isResetDemoConfirmOpen, setIsResetDemoConfirmOpen] = useState<boolean>(false);
+  const isInstantMode = instantSite !== null;
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'settings'>(() => parseUrlPath().view);
   const [settingsTab, setSettingsTab] = useState<SettingsTab>(() => parseUrlPath().tab);
@@ -335,14 +341,24 @@ export default function App() {
     }
   };
 
-  // Active sites & selected site depend on whether user is logged in or viewing Demo mode
-  const activeSites = isDemoMode ? demoSites : userSites;
-  const activeSiteId = isDemoMode ? demoSiteId : userSiteId;
-  const setActiveSiteId = isDemoMode ? setDemoSiteId : setUserSiteId;
+  // Active sites & selected site depend on whether user is in Instant Diagnosis mode, Demo mode, or logged in
+  const baseSites = isDemoMode ? demoSites : userSites;
+  const activeSites = instantSite ? [instantSite, ...baseSites] : baseSites;
+  const activeSiteId = instantSite ? instantSite.id : isDemoMode ? demoSiteId : userSiteId;
+  const setActiveSiteId = (id: string) => {
+    if (instantSite && id !== instantSite.id) {
+      setInstantSite(null);
+    }
+    if (isDemoMode) {
+      setDemoSiteId(id);
+    } else {
+      setUserSiteId(id);
+    }
+  };
   const currentSite: ProjectSite | undefined =
-    activeSites.find((s) => s.id === activeSiteId) || activeSites[0];
+    instantSite || baseSites.find((s) => s.id === activeSiteId) || baseSites[0];
 
-  // Handler invoked when a file or WP Site Health text is parsed through the drag-and-drop zone
+  // Handler invoked when a file or WP Site Health text is parsed through the Instant Diagnosis modal
   const handleFileParsed = (
     fileName: string,
     parsedDeps: Dependency[],
@@ -368,46 +384,22 @@ export default function App() {
       resolvedDays
     );
 
-    if (!currentSite) {
-      const uploadedSite: ProjectSite = {
-        id: 'site_manual_upload',
-        name: fileName,
-        url: 'http://localhost',
-        ecosystem: resolvedEco,
-        syncMethod: 'actions',
-        isVerified: true,
-        verificationToken: 'sbw_live_manual_upload',
-        currentWeather: newWeather,
-        lastScannedAt: t('dashboard.lastScannedJustNow'),
-        daysUnresolved: resolvedDays,
-        dependencies: parsedDeps,
-        forecast: updatedForecast
-      };
-      setUserSites([uploadedSite]);
-      setUserSiteId(uploadedSite.id);
-      return;
-    }
+    const diagnosedSite: ProjectSite = {
+      id: 'site_instant_diagnosis',
+      name: fileName,
+      url: t('demo.instantUrlLabel'),
+      ecosystem: resolvedEco,
+      syncMethod: 'actions',
+      isVerified: true,
+      verificationToken: 'sbw_instant_diagnosis',
+      currentWeather: newWeather,
+      lastScannedAt: t('dashboard.lastScannedJustNow'),
+      daysUnresolved: resolvedDays,
+      dependencies: parsedDeps,
+      forecast: updatedForecast
+    };
 
-    const updater = (prev: ProjectSite[]) =>
-      prev.map((s) =>
-        s.id === currentSite.id
-          ? {
-              ...s,
-              ecosystem: resolvedEco,
-              currentWeather: newWeather,
-              daysUnresolved: resolvedDays,
-              lastScannedAt: t('dashboard.lastScannedJustNow'),
-              dependencies: parsedDeps,
-              forecast: updatedForecast
-            }
-          : s
-      );
-
-    if (isDemoMode) {
-      setDemoSites(updater);
-    } else {
-      setUserSites(updater);
-    }
+    setInstantSite(diagnosedSite);
   };
 
   // Refresh scan from backend D1 database
@@ -575,52 +567,93 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-8">
         {currentView === 'dashboard' ? (
           <>
-            {/* Logged-out Demo Mode Banner */}
-            {isDemoMode && (
-              <div className="rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/70 to-indigo-50/60 border border-amber-200/90 p-4 sm:px-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs">
+            {/* Logged-out Demo Mode / Instant Diagnosis Mode Banner */}
+            {(isDemoMode || isInstantMode) && (
+              <div
+                className={`rounded-2xl p-4 sm:px-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs border ${
+                  isInstantMode
+                    ? 'bg-gradient-to-r from-indigo-50 via-sky-50/70 to-emerald-50/50 border-indigo-200/90'
+                    : 'bg-gradient-to-r from-amber-50 via-orange-50/70 to-indigo-50/60 border-amber-200/90'
+                }`}
+              >
                 <div className="flex items-start gap-3.5">
-                  <div className="p-2 rounded-xl bg-amber-100 text-amber-700 border border-amber-200 flex-shrink-0 mt-0.5">
-                    <Eye className="w-5 h-5" />
+                  <div
+                    className={`p-2 rounded-xl border flex-shrink-0 mt-0.5 ${
+                      isInstantMode
+                        ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                        : 'bg-amber-100 text-amber-700 border-amber-200'
+                    }`}
+                  >
+                    {isInstantMode ? <Zap className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded bg-amber-600 text-white text-[10px] font-extrabold tracking-wider uppercase">
-                        {t('demo.badge')}
+                      <span
+                        className={`px-2 py-0.5 rounded text-white text-[10px] font-extrabold tracking-wider uppercase ${
+                          isInstantMode ? 'bg-indigo-600' : 'bg-amber-600'
+                        }`}
+                      >
+                        {isInstantMode ? t('demo.instantBadge') : t('demo.badge')}
                       </span>
                       <h2 className="text-sm font-bold text-slate-900">
-                        {t('demo.bannerTitle')}
+                        {isInstantMode ? t('demo.instantBannerTitle') : t('demo.bannerTitle')}
                       </h2>
                     </div>
                     <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                      {t('demo.bannerDesc')}
+                      {isInstantMode ? t('demo.instantBannerDesc') : t('demo.bannerDesc')}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
-                  <button
-                    onClick={() => handleQuickProviderSignIn('google')}
-                    className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 hover:border-slate-300 text-xs font-bold shadow-2xs transition-all active:scale-98 cursor-pointer whitespace-nowrap"
-                  >
-                    <GoogleIcon className="w-4 h-4" />
-                    <span>{t('demo.loginWithGoogle')}</span>
-                  </button>
-                  <button
-                    onClick={() => handleQuickProviderSignIn('microsoft')}
-                    className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer whitespace-nowrap"
-                  >
-                    <MicrosoftIcon className="w-4 h-4" />
-                    <span>{t('demo.loginWithMicrosoft')}</span>
-                  </button>
-                </div>
+                {isDemoMode && (
+                  <div className="flex flex-wrap items-center gap-2.5 flex-shrink-0">
+                    <button
+                      onClick={() => handleQuickProviderSignIn('google')}
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 hover:border-slate-300 text-xs font-bold shadow-2xs transition-all active:scale-98 cursor-pointer whitespace-nowrap"
+                    >
+                      <GoogleIcon className="w-4 h-4" />
+                      <span>{t('demo.loginWithGoogle')}</span>
+                    </button>
+                    <button
+                      onClick={() => handleQuickProviderSignIn('microsoft')}
+                      className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer whitespace-nowrap"
+                    >
+                      <MicrosoftIcon className="w-4 h-4" />
+                      <span>{t('demo.loginWithMicrosoft')}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
             {currentSite ? (
               <>
                 {/* Top Bar for Project Context */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-slate-200">
                   <div>
+                    {/* Instant Diagnosis Trigger & Reset to Demo Buttons above Project Heading */}
+                    <div className="flex items-center gap-2.5 flex-wrap mb-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsDiagnosisModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>{isDemoMode ? t('demo.instantBtn') : t('demo.instantBtnAuth')}</span>
+                      </button>
+
+                      {isInstantMode && (
+                        <button
+                          type="button"
+                          onClick={() => setIsResetDemoConfirmOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-900 border border-slate-300 hover:border-amber-300 text-xs font-bold shadow-2xs transition-all active:scale-98 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{t('demo.resetToDemoBtn')}</span>
+                        </button>
+                      )}
+                    </div>
+
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">
                         {siteDisplayName}
@@ -628,17 +661,28 @@ export default function App() {
                       <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-medium border border-slate-200 uppercase">
                         {currentSite.ecosystem}
                       </span>
-                      {isDemoMode && (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-300 uppercase">
-                          <Eye className="w-3 h-3 text-amber-600" />
-                          <span>{t('demo.badge')}</span>
+                      {isInstantMode ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold border border-indigo-300 uppercase">
+                          <Zap className="w-3 h-3 text-indigo-600" />
+                          <span>{t('demo.instantBadge')}</span>
                         </span>
+                      ) : (
+                        isDemoMode && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold border border-amber-300 uppercase">
+                            <Eye className="w-3 h-3 text-amber-600" />
+                            <span>{t('demo.badge')}</span>
+                          </span>
+                        )
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-slate-500 font-mono mt-1">
                       <span>{currentSite.url}</span>
                       <span>•</span>
-                      <span>{String(t('dashboard.syncMethod', { method: currentSite.syncMethod }))}</span>
+                      <span>
+                        {isInstantMode
+                          ? t('demo.instantSyncMethod')
+                          : String(t('dashboard.syncMethod', { method: currentSite.syncMethod }))}
+                      </span>
                     </div>
                   </div>
 
@@ -668,6 +712,7 @@ export default function App() {
                   dependencies={currentSite.dependencies}
                   project={currentSite}
                   isDemoMode={isDemoMode}
+                  isInstantMode={isInstantMode}
                 />
               </>
             ) : (
@@ -682,13 +727,21 @@ export default function App() {
                 <p className="text-xs text-slate-500 mt-1.5 max-w-md mx-auto leading-relaxed">
                   {t('sites.emptyDesc')}
                 </p>
-                <div className="mt-5 flex items-center justify-center gap-3">
+                <div className="mt-5 flex items-center justify-center gap-3 flex-wrap">
                   <button
                     onClick={() => navigateTo('settings', 'sites')}
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all active:scale-98 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{t('sites.addNewSite')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsDiagnosisModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200 shadow-2xs transition-all active:scale-98 cursor-pointer"
+                  >
+                    <Zap className="w-4 h-4 text-indigo-600" />
+                    <span>{t('demo.instantBtnAuth')}</span>
                   </button>
                   <button
                     onClick={handleRefreshScan}
@@ -701,9 +754,6 @@ export default function App() {
                 </div>
               </div>
             )}
-
-            {/* 4. Drag & Drop Lockfile Analysis (Moved to the bottom) */}
-            <DropZone onFileParsed={handleFileParsed} />
           </>
         ) : (
           <SettingsLayout
@@ -753,6 +803,54 @@ export default function App() {
           project={currentSite}
           onClose={() => setIsPdfModalOpen(false)}
         />
+      )}
+
+      {/* Instant Diagnosis Modal (WordPress Site Info & Lockfile DropZone) */}
+      <DropZone
+        isOpen={isDiagnosisModalOpen}
+        onClose={() => setIsDiagnosisModalOpen(false)}
+        onFileParsed={handleFileParsed}
+      />
+
+      {/* Reset to Demo Confirmation Modal */}
+      {isResetDemoConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsResetDemoConfirmOpen(false);
+          }}
+        >
+          <div className="relative w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-xl p-6 text-center animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-3 shadow-2xs">
+              <RotateCcw className="w-5 h-5 stroke-[2.2]" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mb-1.5">
+              {t('demo.resetConfirmTitle')}
+            </h3>
+            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+              {t('demo.resetConfirmDesc')}
+            </p>
+            <div className="flex items-center justify-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsResetDemoConfirmOpen(false)}
+                className="flex-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInstantSite(null);
+                  setIsResetDemoConfirmOpen(false);
+                }}
+                className="flex-1 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                {t('demo.resetConfirmAction')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Footer */}

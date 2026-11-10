@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import {
   UploadCloud,
   FileCode,
-  CheckCircle2,
   AlertCircle,
   ClipboardPaste,
   X,
   Loader2,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Package
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency, WeatherStatus } from '../types';
@@ -16,7 +16,12 @@ import { calculateWeatherStatus, calculateMaxDaysUnresolved } from '../mockData'
 import { isCycloneDX, parseCycloneDX } from '../lib/cyclonedx';
 import { isWpSiteHealthText, parseWpSiteHealthText } from '../lib/wpSiteHealth';
 
+export type DiagnosisTab = 'wordpress' | 'package';
+
 interface DropZoneProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialTab?: DiagnosisTab;
   onFileParsed: (
     fileName: string,
     dependencies: Dependency[],
@@ -28,19 +33,24 @@ interface DropZoneProps {
 
 type ScanStage = 'idle' | 'parsing' | 'matching' | 'generating';
 
-export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
+export const DropZone: React.FC<DropZoneProps> = ({
+  isOpen,
+  onClose,
+  initialTab = 'wordpress',
+  onFileParsed
+}) => {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<DiagnosisTab>(initialTab);
   const [isDragging, setIsDragging] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
-  const [currentFileName, setCurrentFileName] = useState<string | null>(null);
-  const [lastInspectedCount, setLastInspectedCount] = useState<number>(0);
   const [scanStage, setScanStage] = useState<ScanStage>('idle');
   const [detectedPkgCount, setDetectedPkgCount] = useState<number>(0);
 
-  // WordPress Site Health Info Modal state
-  const [isWpModalOpen, setIsWpModalOpen] = useState(false);
+  // WordPress Site Health Info state
   const [wpInfoText, setWpInfoText] = useState('');
   const [wpModalError, setWpModalError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -60,10 +70,25 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
     });
   };
 
+  const finishAndClose = (
+    fileName: string,
+    sortedDeps: Dependency[],
+    hasVuln: boolean,
+    resolvedWeather: WeatherStatus,
+    ecosystem: 'composer' | 'npm' | 'wordpress'
+  ) => {
+    setScanStage('idle');
+    onFileParsed(fileName, sortedDeps, hasVuln, resolvedWeather, ecosystem);
+    onClose();
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const processFileContent = async (content: string, fileName: string): Promise<boolean> => {
     try {
       setParseError(null);
-      setCurrentFileName(null);
+      setWpModalError(null);
       setScanStage('parsing');
 
       let parsedDeps: Dependency[] = [];
@@ -218,10 +243,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           const resolvedWeather: WeatherStatus =
             result.weather || calculateWeatherStatus(allVulns, maxDays);
 
-          setCurrentFileName(fileName);
-          setLastInspectedCount(sortedDeps.length);
-          setScanStage('idle');
-          onFileParsed(fileName, sortedDeps, hasVuln, resolvedWeather, ecosystem);
+          finishAndClose(fileName, sortedDeps, hasVuln, resolvedWeather, ecosystem);
           return true;
         }
       } catch (apiErr) {
@@ -294,14 +316,16 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       const fallbackAllVulns = sortedDeps.flatMap((d) => d.vulnerabilities || []);
       const fallbackMaxDays = calculateMaxDaysUnresolved(sortedDeps, 0);
       const fallbackWeather = calculateWeatherStatus(fallbackAllVulns, fallbackMaxDays);
-      setCurrentFileName(fileName);
-      setLastInspectedCount(sortedDeps.length);
-      setScanStage('idle');
-      onFileParsed(fileName, sortedDeps, foundVuln, fallbackWeather, ecosystem);
+      finishAndClose(fileName, sortedDeps, foundVuln, fallbackWeather, ecosystem);
       return true;
     } catch (err: any) {
       setScanStage('idle');
-      setParseError(err.message || t('dropzone.jsonParseError'));
+      const errMsg = err.message || t('dropzone.jsonParseError');
+      if (activeTab === 'wordpress') {
+        setWpModalError(errMsg);
+      } else {
+        setParseError(errMsg);
+      }
       return false;
     }
   };
@@ -345,13 +369,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       return;
     }
 
-    const ok = await processFileContent(trimmed, t('dropzone.wpSiteHealthParsedName'));
-    if (ok) {
-      setIsWpModalOpen(false);
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
+    await processFileContent(trimmed, t('dropzone.wpSiteHealthParsedName'));
   };
 
   // Instant sample loading for testing
@@ -415,147 +433,79 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
   };
 
   return (
-    <div className="rounded-2xl bg-white p-6 border border-slate-200/80 shadow-xs">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-        <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <UploadCloud className="w-5 h-5 text-indigo-600" />
-            <span>{t('dropzone.title')}</span>
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">{t('dropzone.subtitle')}</p>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && scanStage === 'idle') {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700 border border-indigo-200/60">
+              <UploadCloud className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                {t('dropzone.title')}
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">{t('dropzone.subtitle')}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={scanStage !== 'idle'}
+            aria-label={t('common.close')}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* WordPress Site Info Diagnosis button & Demo buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Tab Bar (Left: WordPress Site Info Diagnosis, Right: Package Diagnosis) */}
+        <div className="px-6 pt-3 bg-slate-50/70 border-b border-slate-200 flex items-center gap-2">
           <button
             type="button"
             onClick={() => {
+              setActiveTab('wordpress');
               setWpModalError(null);
-              setIsWpModalOpen(true);
+              setParseError(null);
             }}
-            className="inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all cursor-pointer shadow-xs active:scale-98"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold border-t border-x transition-all cursor-pointer -mb-px ${
+              activeTab === 'wordpress'
+                ? 'bg-white text-indigo-700 border-slate-200 shadow-2xs'
+                : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-transparent'
+            }`}
           >
-            <ClipboardPaste className="w-3.5 h-3.5" />
-            <span>{t('dropzone.wpSiteInfoBtn')}</span>
-          </button>
-
-          <span className="text-xs text-slate-400 hidden sm:inline">|</span>
-          <span className="text-xs text-slate-500">{t('dropzone.trySample')}</span>
-          <button
-            type="button"
-            onClick={() => loadSample('php_vulnerable')}
-            className="text-xs px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition-all font-medium cursor-pointer shadow-2xs"
-          >
-            {t('dropzone.phpSample')}
+            <ClipboardPaste className="w-4 h-4" />
+            <span>{t('dropzone.tabWordpress')}</span>
           </button>
           <button
             type="button"
-            onClick={() => loadSample('clean_npm')}
-            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 transition-all font-medium cursor-pointer shadow-2xs"
+            onClick={() => {
+              setActiveTab('package');
+              setWpModalError(null);
+              setParseError(null);
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold border-t border-x transition-all cursor-pointer -mb-px ${
+              activeTab === 'package'
+                ? 'bg-white text-indigo-700 border-slate-200 shadow-2xs'
+                : 'bg-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 border-transparent'
+            }`}
           >
-            {t('dropzone.npmSample')}
-          </button>
-          <button
-            type="button"
-            onClick={() => loadSample('cyclonedx')}
-            className="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300/80 transition-all font-medium cursor-pointer shadow-2xs"
-          >
-            {t('dropzone.cycloneDxSample')}
+            <Package className="w-4 h-4" />
+            <span>{t('dropzone.tabPackage')}</span>
           </button>
         </div>
-      </div>
 
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-          isDragging
-            ? 'border-indigo-500 bg-indigo-50/50 scale-[1.01]'
-            : 'border-slate-300 hover:border-indigo-400 bg-slate-50/40 hover:bg-slate-50/80'
-        }`}
-      >
-        <input
-          type="file"
-          id="file-upload"
-          className="hidden"
-          accept=".json,.lock,.cdx,.txt"
-          onChange={handleFileInput}
-        />
-        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
-          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mb-3 shadow-xs group-hover:scale-105 transition-transform">
-            <FileCode className="w-6 h-6" />
-          </div>
-          <p className="text-sm font-medium text-slate-700">{t('dropzone.dropInstruction')}</p>
-          <p className="text-xs text-slate-500 mt-1">{t('dropzone.dropInstructionOr')}</p>
-          <div className="mt-3 pt-2.5 border-t border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
-            <p>{t('dropzone.scopeDisclaimerLine1')}</p>
-            <p>{t('dropzone.scopeDisclaimerLine2')}</p>
-          </div>
-        </label>
-      </div>
-
-      {/* On-demand Scanning Progress Indicator */}
-      {scanStage !== 'idle' && (
-        <div className="mt-3 flex items-center gap-3 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-medium">
-          <Loader2 className="w-4 h-4 flex-shrink-0 text-indigo-600 animate-spin" />
-          <div className="flex-1">
-            {scanStage === 'parsing' && (
-              <span>{t('dropzone.scanningStep1', { count: detectedPkgCount })}</span>
-            )}
-            {scanStage === 'matching' && <span>{t('dropzone.scanningStep2')}</span>}
-            {scanStage === 'generating' && <span>{t('dropzone.scanningStep3')}</span>}
-          </div>
-        </div>
-      )}
-
-      {parseError && (
-        <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
-          <span>{parseError}</span>
-        </div>
-      )}
-
-      {currentFileName && !parseError && scanStage === 'idle' && (
-        <div className="mt-3 flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
-          <span>
-            {t('dropzone.analysisComplete', {
-              fileName: currentFileName,
-              count: lastInspectedCount
-            })}
-          </span>
-        </div>
-      )}
-
-      {/* WordPress Site Health Info Paste Modal */}
-      {isWpModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
-                  <ClipboardPaste className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900">
-                    {t('dropzone.wpModalTitle')}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{t('dropzone.wpModalSubtitle')}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsWpModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-4">
+          {activeTab === 'wordpress' ? (
+            <>
               {/* Step-by-step instructions */}
               <div className="rounded-xl bg-indigo-50/70 border border-indigo-100 p-4 space-y-2">
                 <h4 className="text-xs font-bold text-indigo-950">{t('dropzone.wpHowToTitle')}</h4>
@@ -612,7 +562,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
 
                 <textarea
                   id="wp-site-health-textarea"
-                  rows={10}
+                  rows={9}
                   value={wpInfoText}
                   onChange={(e) => {
                     setWpInfoText(e.target.value);
@@ -623,51 +573,138 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
                 />
               </div>
 
-              {/* Error inside Modal */}
+              {/* Error inside WP Tab */}
               {wpModalError && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
                   <span>{wpModalError}</span>
                 </div>
               )}
+            </>
+          ) : (
+            <>
+              {/* Package Diagnosis Overview */}
+              <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-4 space-y-1.5">
+                <h4 className="text-xs font-bold text-slate-900">
+                  {t('dropzone.packageHowToTitle')}
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {t('dropzone.packageHowToDesc')}
+                </p>
+              </div>
 
-              {/* Scanning Progress inside Modal */}
-              {scanStage !== 'idle' && (
-                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-medium">
-                  <Loader2 className="w-4 h-4 flex-shrink-0 text-indigo-600 animate-spin" />
-                  <span>
-                    {scanStage === 'parsing'
-                      ? t('dropzone.scanningStep1', { count: detectedPkgCount })
-                      : scanStage === 'matching'
-                      ? t('dropzone.scanningStep2')
-                      : t('dropzone.scanningStep3')}
-                  </span>
+              {/* Drag & Drop Zone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                  isDragging
+                    ? 'border-indigo-500 bg-indigo-50/50 scale-[1.01]'
+                    : 'border-slate-300 hover:border-indigo-400 bg-slate-50/40 hover:bg-slate-50/80'
+                }`}
+              >
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  accept=".json,.lock,.cdx,.txt"
+                  onChange={handleFileInput}
+                />
+                <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mb-3 shadow-xs group-hover:scale-105 transition-transform">
+                    <FileCode className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-800">{t('dropzone.dropInstruction')}</p>
+                  <p className="text-xs text-slate-500 mt-1">{t('dropzone.dropInstructionOr')}</p>
+                  <div className="mt-3 pt-2.5 border-t border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">
+                    <p>{t('dropzone.scopeDisclaimerLine1')}</p>
+                    <p>{t('dropzone.scopeDisclaimerLine2')}</p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Quick Sample Buttons */}
+              <div className="rounded-xl bg-slate-50/80 border border-slate-200/80 p-3.5 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-600">
+                  {t('dropzone.trySample')}
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    disabled={scanStage !== 'idle'}
+                    onClick={() => loadSample('php_vulnerable')}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition-all font-medium cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    {t('dropzone.phpSample')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={scanStage !== 'idle'}
+                    onClick={() => loadSample('clean_npm')}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 transition-all font-medium cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    {t('dropzone.npmSample')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={scanStage !== 'idle'}
+                    onClick={() => loadSample('cyclonedx')}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-300/80 transition-all font-medium cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    {t('dropzone.cycloneDxSample')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error inside Package Tab */}
+              {parseError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
+                  <span>{parseError}</span>
                 </div>
               )}
-            </div>
+            </>
+          )}
 
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsWpModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={scanStage !== 'idle'}
-                onClick={handleRunWpSiteDiagnosis}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer"
-              >
-                <ShieldAlert className="w-4 h-4" />
-                <span>{t('dropzone.wpRunDiagnosisBtn')}</span>
-              </button>
+          {/* Scanning Progress inside Modal */}
+          {scanStage !== 'idle' && (
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-medium">
+              <Loader2 className="w-4 h-4 flex-shrink-0 text-indigo-600 animate-spin" />
+              <span>
+                {scanStage === 'parsing'
+                  ? t('dropzone.scanningStep1', { count: detectedPkgCount })
+                  : scanStage === 'matching'
+                  ? t('dropzone.scanningStep2')
+                  : t('dropzone.scanningStep3')}
+              </span>
             </div>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Modal Footer */}
+        <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            disabled={scanStage !== 'idle'}
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          {activeTab === 'wordpress' && (
+            <button
+              type="button"
+              disabled={scanStage !== 'idle'}
+              onClick={handleRunWpSiteDiagnosis}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer"
+            >
+              <ShieldAlert className="w-4 h-4" />
+              <span>{t('dropzone.wpRunDiagnosisBtn')}</span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

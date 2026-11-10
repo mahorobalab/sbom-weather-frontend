@@ -9,7 +9,8 @@ import {
   HelpCircle,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Zap
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency, ProjectSite, Vulnerability } from '../types';
@@ -19,6 +20,7 @@ interface DependencyTableProps {
   dependencies: Dependency[];
   project?: ProjectSite;
   isDemoMode?: boolean;
+  isInstantMode?: boolean;
 }
 
 /**
@@ -57,7 +59,8 @@ function getHighestFixedVersion(vulns: Vulnerability[]): string {
 export const DependencyTable: React.FC<DependencyTableProps> = ({
   dependencies,
   project,
-  isDemoMode = false
+  isDemoMode = false,
+  isInstantMode = false
 }) => {
   const { t } = useTranslation();
   const [showCveHelp, setShowCveHelp] = useState(false);
@@ -109,11 +112,18 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-base font-bold text-slate-900">{t('table.title')}</h3>
-            {isDemoMode && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold tracking-wide uppercase">
-                <Eye className="w-3 h-3 text-amber-600" />
-                <span>{t('demo.tableBadge')}</span>
+            {isInstantMode ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-300 text-[10px] font-bold tracking-wide uppercase">
+                <Zap className="w-3 h-3 text-indigo-600" />
+                <span>{t('demo.instantTableBadge')}</span>
               </span>
+            ) : (
+              isDemoMode && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold tracking-wide uppercase">
+                  <Eye className="w-3 h-3 text-amber-600" />
+                  <span>{t('demo.tableBadge')}</span>
+                </span>
+              )
             )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">{t('table.detectedCount', { count: dependencies.length })}</p>
