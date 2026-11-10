@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency, WeatherStatus } from '../types';
+import { calculateWeatherStatus, calculateMaxDaysUnresolved } from '../mockData';
 import { isCycloneDX, parseCycloneDX } from '../lib/cyclonedx';
 import { isWpSiteHealthText, parseWpSiteHealthText } from '../lib/wpSiteHealth';
 
@@ -184,6 +185,9 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
               if (matchedDep) {
                 const alreadyAdded = matchedDep.vulnerabilities.some((v) => v.id === alert.cve_id);
                 if (!alreadyAdded) {
+                  const fallbackDate = alert.firstDetectedAt
+                    ? new Date(alert.firstDetectedAt * 1000).toISOString().slice(0, 10)
+                    : new Date().toISOString().slice(0, 10);
                   matchedDep.vulnerabilities.push({
                     id: alert.cve_id,
                     title: alert.title,
@@ -192,7 +196,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
                     packageName: alert.packageName,
                     affectedVersion: `< ${alert.fixedVersion}`,
                     fixedVersion: alert.fixedVersion,
-                    detectedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    detectedAt: alert.publishedAt || fallbackDate,
                     description: alert.description
                   });
                 }
@@ -208,9 +212,11 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
           }
 
           const sortedDeps = sortDependenciesByRisk(parsedDeps);
-          const hasVuln = sortedDeps.some((d) => d.vulnerabilities.length > 0);
+          const allVulns = sortedDeps.flatMap((d) => d.vulnerabilities || []);
+          const hasVuln = allVulns.length > 0;
+          const maxDays = calculateMaxDaysUnresolved(sortedDeps, 0);
           const resolvedWeather: WeatherStatus =
-            result.weather || (hasVuln ? 'thunderstorm' : 'sunny');
+            result.weather || calculateWeatherStatus(allVulns, maxDays);
 
           setCurrentFileName(fileName);
           setLastInspectedCount(sortedDeps.length);
@@ -231,6 +237,18 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
             foundVuln = true;
             dep.vulnerabilities.push(
               {
+                id: 'CVE-2025-14179',
+                title: 'PHP 8.2 < 8.2.31 Critical Vulnerability in PDOPgSql / Standard Extension',
+                severity: 'CRITICAL',
+                cvss: 9.8,
+                packageName: dep.name,
+                affectedVersion: '< 8.2.31',
+                fixedVersion: '8.2.31',
+                detectedAt: '2026-05-10',
+                description:
+                  'In PHP 8.2.* before 8.2.31, critical memory corruption vulnerability published on 2026-05-10.'
+              },
+              {
                 id: 'CVE-2025-14177',
                 title: 'PHP 8.2 < 8.2.30 Heap Information Disclosure in getimagesize()',
                 severity: 'HIGH',
@@ -238,7 +256,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
                 packageName: dep.name,
                 affectedVersion: '< 8.2.30',
                 fixedVersion: '8.2.30',
-                detectedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                detectedAt: '2025-12-27',
                 description:
                   'In PHP 8.2.* before 8.2.30, getimagesize() may leak uninitialized heap memory into APPn segments.'
               },
@@ -250,7 +268,7 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
                 packageName: dep.name,
                 affectedVersion: '< 8.2.31',
                 fixedVersion: '8.2.31',
-                detectedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                detectedAt: '2026-05-10',
                 description:
                   'In PHP 8.2.* before 8.2.31, improper boundary handling in PDO parameter quoting may lead to memory corruption.'
               }
@@ -273,10 +291,13 @@ export const DropZone: React.FC<DropZoneProps> = ({ onFileParsed }) => {
       });
 
       const sortedDeps = sortDependenciesByRisk(parsedDeps);
+      const fallbackAllVulns = sortedDeps.flatMap((d) => d.vulnerabilities || []);
+      const fallbackMaxDays = calculateMaxDaysUnresolved(sortedDeps, 0);
+      const fallbackWeather = calculateWeatherStatus(fallbackAllVulns, fallbackMaxDays);
       setCurrentFileName(fileName);
       setLastInspectedCount(sortedDeps.length);
       setScanStage('idle');
-      onFileParsed(fileName, sortedDeps, foundVuln, foundVuln ? 'thunderstorm' : 'sunny', ecosystem);
+      onFileParsed(fileName, sortedDeps, foundVuln, fallbackWeather, ecosystem);
       return true;
     } catch (err: any) {
       setScanStage('idle');

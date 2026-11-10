@@ -41,7 +41,7 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
       badgeColor: 'bg-blue-100 text-blue-800 border-blue-300 font-medium',
       headline: t('weather.rain.headline'),
       description: t('weather.rain.description'),
-      subText: t('weather.rain.subText', { days: daysUnresolved })
+      subText: t('weather.rain.subText', { days: daysUnresolved, time: lastScannedAt })
     },
     thunderstorm: {
       label: t('weather.thunderstorm.label'),
@@ -50,8 +50,8 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
       bgGradient: 'from-amber-50/90 via-rose-50/40 to-orange-50/50 border-amber-300',
       badgeColor: 'bg-rose-100 text-rose-800 border-rose-300 font-semibold animate-pulse',
       headline: t('weather.thunderstorm.headline'),
-      description: t('weather.thunderstorm.description'),
-      subText: t('weather.thunderstorm.subText', { time: lastScannedAt })
+      description: t('weather.thunderstorm.description', { days: daysUnresolved }),
+      subText: t('weather.thunderstorm.subText', { days: daysUnresolved, time: lastScannedAt })
     },
     typhoon: {
       label: t('weather.typhoon.label'),
@@ -61,7 +61,7 @@ export const WeatherBanner: React.FC<WeatherBannerProps> = ({ project, onOpenPdf
       badgeColor: 'bg-red-600 text-white font-bold animate-bounce',
       headline: t('weather.typhoon.headline'),
       description: t('weather.typhoon.description', { days: daysUnresolved }),
-      subText: t('weather.typhoon.subText')
+      subText: t('weather.typhoon.subText', { days: daysUnresolved, time: lastScannedAt })
     }
   }[currentWeather];
 

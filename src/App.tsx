@@ -9,7 +9,14 @@ import { SettingsLayout, type SettingsTab } from './components/SettingsLayout';
 import { PdfReportModal } from './components/PdfReportModal';
 import { PricingModal } from './components/PricingModal';
 import { LoginModal, GoogleIcon, MicrosoftIcon } from './components/LoginModal';
-import { INITIAL_PROJECTS, INITIAL_MEMBERS, applyDynamic7DayDates } from './mockData';
+import {
+  INITIAL_PROJECTS,
+  INITIAL_MEMBERS,
+  applyDynamic7DayDates,
+  build7DayForecastFromDependencies,
+  calculateWeatherStatus,
+  calculateMaxDaysUnresolved
+} from './mockData';
 import { useAuth } from './contexts/AuthContext';
 import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier, DayForecast } from './types';
 import { RefreshCw, Eye, Globe, Plus } from 'lucide-react';
@@ -47,12 +54,25 @@ const loadUserSitesFromStorage = (uid?: string): ProjectSite[] => {
       if (Array.isArray(parsed)) {
         return parsed
           .filter((site: ProjectSite) => site && site.id && !DEMO_SITE_IDS.has(site.id))
-          .map((site: ProjectSite) => ({
-            ...site,
-            forecast: applyDynamic7DayDates(
-              site.forecast?.length ? site.forecast : buildDefaultForecast(site.currentWeather, 0)
-            )
-          }));
+          .map((site: ProjectSite) => {
+            const deps = Array.isArray(site.dependencies) ? site.dependencies : [];
+            const allVulns = deps.flatMap((d) => d.vulnerabilities || []);
+            const daysUnresolved = calculateMaxDaysUnresolved(deps, site.daysUnresolved ?? 0);
+            const currentWeather =
+              allVulns.length > 0
+                ? calculateWeatherStatus(allVulns, daysUnresolved)
+                : site.currentWeather || 'sunny';
+            return {
+              ...site,
+              daysUnresolved,
+              currentWeather,
+              forecast: build7DayForecastFromDependencies(
+                deps,
+                currentWeather,
+                daysUnresolved
+              )
+            };
+          });
       }
     }
   } catch {
@@ -193,24 +213,24 @@ export default function App() {
             const remoteSites: ProjectSite[] = data.sites
               .filter((remoteSite: any) => remoteSite && remoteSite.id && !DEMO_SITE_IDS.has(remoteSite.id))
               .map((remoteSite: any) => {
-                const vulnCount = (remoteSite.dependencies || []).reduce(
-                  (sum: number, d: Dependency) => sum + (d.vulnerabilities?.length || 0),
-                  0
-                );
                 const existing = prevSites.find((s) => s.id === remoteSite.id);
                 const hasRemoteDeps = Array.isArray(remoteSite.dependencies) && remoteSite.dependencies.length > 0;
-                const weather = (remoteSite.currentWeather || existing?.currentWeather || 'sunny') as WeatherStatus;
-                const updatedForecast = applyDynamic7DayDates(
-                  existing?.forecast?.length ? existing.forecast : buildDefaultForecast(weather, vulnCount)
-                ).map((f, fIdx, arr) =>
-                  fIdx === arr.length - 1
-                    ? {
-                        ...f,
-                        weather,
-                        vulnerabilityCount: vulnCount,
-                        summaryKey: vulnCount > 0 ? 'forecast.summaries.stormAlert' : 'forecast.summaries.cleanSystem'
-                      }
-                    : f
+                const deps: Dependency[] = hasRemoteDeps
+                  ? remoteSite.dependencies
+                  : existing?.dependencies || [];
+                const allVulns = deps.flatMap((d) => d.vulnerabilities || []);
+                const daysUnresolved = calculateMaxDaysUnresolved(
+                  deps,
+                  remoteSite.daysUnresolved ?? existing?.daysUnresolved ?? 0
+                );
+                const weather: WeatherStatus =
+                  allVulns.length > 0
+                    ? calculateWeatherStatus(allVulns, daysUnresolved)
+                    : ((remoteSite.currentWeather || existing?.currentWeather || 'sunny') as WeatherStatus);
+                const updatedForecast = build7DayForecastFromDependencies(
+                  deps,
+                  weather,
+                  daysUnresolved
                 );
 
                 return {
@@ -226,10 +246,10 @@ export default function App() {
                   lastScannedAt: hasRemoteDeps
                     ? remoteSite.lastScannedAt
                     : existing?.lastScannedAt || remoteSite.lastScannedAt || t('dashboard.unscanned'),
-                  daysUnresolved: remoteSite.daysUnresolved ?? existing?.daysUnresolved ?? 0,
+                  daysUnresolved,
                   createdAt: remoteSite.createdAt ?? existing?.createdAt ?? null,
                   expiresAt: remoteSite.expiresAt ?? existing?.expiresAt ?? null,
-                  dependencies: hasRemoteDeps ? remoteSite.dependencies : existing?.dependencies || [],
+                  dependencies: deps,
                   forecast: updatedForecast
                 };
               });
@@ -330,14 +350,23 @@ export default function App() {
     weatherOverride?: WeatherStatus,
     ecosystemOverride?: 'composer' | 'npm' | 'wordpress'
   ) => {
-    const newWeather: WeatherStatus = weatherOverride || (isVulnerable ? 'thunderstorm' : 'sunny');
+    const allVulns = parsedDeps.flatMap((d) => d.vulnerabilities || []);
+    const resolvedDays = calculateMaxDaysUnresolved(parsedDeps, 0);
+    const computedWeather =
+      allVulns.length > 0
+        ? calculateWeatherStatus(allVulns, resolvedDays)
+        : isVulnerable
+        ? 'rain'
+        : 'sunny';
+    const newWeather: WeatherStatus =
+      allVulns.length > 0 ? computedWeather : weatherOverride || computedWeather;
     const resolvedEco: 'composer' | 'npm' | 'wordpress' =
       ecosystemOverride || parsedDeps[0]?.ecosystem || 'composer';
-    const totalVulnCount = parsedDeps.reduce(
-      (sum, d) => sum + (d.vulnerabilities?.length || 0),
-      0
+    const updatedForecast = build7DayForecastFromDependencies(
+      parsedDeps,
+      newWeather,
+      resolvedDays
     );
-    const effectiveVulnCount = totalVulnCount > 0 ? totalVulnCount : isVulnerable ? 1 : 0;
 
     if (!currentSite) {
       const uploadedSite: ProjectSite = {
@@ -350,31 +379,14 @@ export default function App() {
         verificationToken: 'sbw_live_manual_upload',
         currentWeather: newWeather,
         lastScannedAt: t('dashboard.lastScannedJustNow'),
-        daysUnresolved: 0,
+        daysUnresolved: resolvedDays,
         dependencies: parsedDeps,
-        forecast: buildDefaultForecast(newWeather, effectiveVulnCount)
+        forecast: updatedForecast
       };
       setUserSites([uploadedSite]);
       setUserSiteId(uploadedSite.id);
       return;
     }
-
-    const updatedForecast = currentSite.forecast.map((f, idx) => {
-      if (idx === currentSite.forecast.length - 1) {
-        return {
-          ...f,
-          weather: newWeather,
-          summary: isVulnerable
-            ? 'Upload analysis: Emergency vulnerability detected!'
-            : 'Upload analysis: No anomalies (safe)',
-          summaryKey: isVulnerable
-            ? 'forecast.summaries.uploadVulnerable'
-            : 'forecast.summaries.uploadSafe',
-          vulnerabilityCount: effectiveVulnCount
-        };
-      }
-      return f;
-    });
 
     const updater = (prev: ProjectSite[]) =>
       prev.map((s) =>
@@ -383,6 +395,7 @@ export default function App() {
               ...s,
               ecosystem: resolvedEco,
               currentWeather: newWeather,
+              daysUnresolved: resolvedDays,
               lastScannedAt: t('dashboard.lastScannedJustNow'),
               dependencies: parsedDeps,
               forecast: updatedForecast
@@ -400,6 +413,10 @@ export default function App() {
   // Refresh scan from backend D1 database
   const handleRefreshScan = async () => {
     setIsScanning(true);
+    await fetch(`${API_BASE_URL}/api/v1/cron/run`, {
+      method: 'POST',
+      headers: buildUserHeaders()
+    }).catch(() => null);
     await syncSitesFromBackend();
     setTimeout(() => {
       setIsScanning(false);

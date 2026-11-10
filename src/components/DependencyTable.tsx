@@ -197,10 +197,17 @@ export const DependencyTable: React.FC<DependencyTableProps> = ({
                   <td className="py-3.5 px-4 text-slate-600">{dep.version}</td>
                   <td className="py-3.5 px-4 font-sans">
                     {hasVuln ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                        <span>{t('table.statusDanger', { severity: vuln.severity })}</span>
-                      </span>
+                      vuln.severity === 'CRITICAL' || vuln.severity === 'HIGH' || (vuln.cvss ?? 0) >= 7.0 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                          <span>{t('table.statusDanger', { severity: vuln.severity })}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                          <span>{t('table.statusWarning', { severity: vuln.severity })}</span>
+                        </span>
+                      )
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />

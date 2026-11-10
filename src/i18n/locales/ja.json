@@ -45,28 +45,28 @@
       "subText": "最終スキャン: {{time}} (自動巡回済)"
     },
     "cloudy": {
-      "label": "曇り（要注意）",
-      "headline": "うす曇り：軽微なアップデートが公開されています",
-      "description": "重大な脅威ではありませんが、マイナーなバグ修正や非クリティカルな更新が届いています。",
+      "label": "曇り（警告）",
+      "headline": "曇り模様：中〜低リスクの脆弱性（警告）が検出されました",
+      "description": "条件付きで影響を受ける脆弱性（MEDIUM / LOW）が確認されています。次回の定期メンテナンスでのアップデートを推奨します。",
       "subText": "最終スキャン: {{time}}"
     },
     "rain": {
-      "label": "雨（注意報）",
-      "headline": "雨模様：中程度の脆弱性が検出されました",
-      "description": "条件付きで影響を受ける脆弱性が確認されています。次回の定期メンテナンスでの対応を推奨します。",
-      "subText": "検出から {{days}} 日経過"
+      "label": "雨（危険・初期）",
+      "headline": "雨模様：危険度の高い脆弱性が検出されました",
+      "description": "危険度の高い脆弱性（HIGH / CRITICAL）が検出されています。放置すると3日で雷雨、7日で台風へ悪化するため早急にアップデートしてください。",
+      "subText": "公開・検出から {{days}} 日経過 (最終スキャン: {{time}})"
     },
     "thunderstorm": {
       "label": "雷雨（緊急警報）",
-      "headline": "雷雨警報発令！極めて深刻な脆弱性を検知",
-      "description": "認証なしで外部攻撃が成立する重大な脆弱性（CVSS 9.0+）が含まれています。大至急パッチを適用してください！",
-      "subText": "最終スキャン: {{time}} (緊急パッチ対象)"
+      "headline": "雷雨警報発令！危険な脆弱性が3日以上未対応です",
+      "description": "重大な脆弱性（HIGH / CRITICAL）が公開・検出から {{days}} 日経過しています。7日以上放置すると台風へ悪化するため、大至急パッチを適用してください！",
+      "subText": "公開・検出から {{days}} 日経過 (最終スキャン: {{time}})"
     },
     "typhoon": {
       "label": "台風（放置警戒）",
-      "headline": "台風直撃！重大な脆弱性が長期間放置されています",
-      "description": "重大な脆弱性が未対応のまま {{days}} 日以上経過しています。攻撃コードが出回っており、即座に相談先または保守ベンダーへ連絡してください。",
-      "subText": "損害賠償・サービス停止の致命的リスクがあります"
+      "headline": "台風直撃！重大な脆弱性が7日以上放置されています",
+      "description": "重大な脆弱性（HIGH / CRITICAL）が未対応のまま {{days}} 日以上経過しています。攻撃コードが出回っており、即座に相談先または保守ベンダーへ連絡してください。",
+      "subText": "公開・検出から {{days}} 日経過 • 致命的リスク"
     },
     "openPdfButton": "相談用PDF診断書を出力",
     "advisorBadge": "外注先・社内SEに見せるだけで相談可能"
@@ -91,9 +91,12 @@
       "sunny": "快晴・異常なし",
       "cleanSystem": "本日も快晴：システムは万全です",
       "registered": "登録完了：快晴",
+      "cloudyWarning": "曇り（警告）：中〜低リスクの脆弱性あり",
+      "rainInitial": "雨（危険）：重大な脆弱性を検出（初期段階）",
       "patchAlert": "深夜23:00 緊急パッチ公開 (CVSS 9.2)",
-      "stormAlert": "大雨警報発令中：早急なパッチ適用が必要",
+      "stormAlert": "雷雨警報発令中：早急なパッチ適用が必要",
       "daysElapsed": "未対応 {{days}}日経過",
+      "thunderstormArrival": "放置 3日到達 (雷雨へ悪化)",
       "typhoonArrival": "放置 7日到達 (台風化)",
       "typhoonHit": "台風直撃：直ちに保守ベンダーへ相談を！",
       "uploadVulnerable": "アップロード解析により緊急脆弱性を検知！",
@@ -148,6 +151,7 @@
     "cveIdentifier": "CVE識別子 / CVSS",
     "recommendation": "推奨対応・安全版",
     "statusDanger": "危険 ({{severity}})",
+    "statusWarning": "警告 ({{severity}})",
     "statusSafe": "安全",
     "updateTo": "{{version}} へ更新",
     "upToDate": "最新またはパッチ適用済",

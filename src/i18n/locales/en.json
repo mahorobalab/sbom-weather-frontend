@@ -45,28 +45,28 @@
       "subText": "Last scan: {{time}} (Auto-patrolled)"
     },
     "cloudy": {
-      "label": "Cloudy (Caution)",
-      "headline": "Slightly overcast: Minor updates have been published",
-      "description": "Not a major threat, but minor bug fixes and non-critical updates are available.",
+      "label": "Cloudy (Warning)",
+      "headline": "Overcast: Low to medium severity warnings detected",
+      "description": "Conditionally exploitable vulnerabilities (MEDIUM / LOW) identified. Updating during your next scheduled maintenance is recommended.",
       "subText": "Last scan: {{time}}"
     },
     "rain": {
-      "label": "Rain (Advisory)",
-      "headline": "Rainy: Moderate vulnerabilities detected",
-      "description": "Conditionally exploitable vulnerabilities identified. Resolution in next scheduled maintenance recommended.",
-      "subText": "{{days}} days elapsed since detection"
+      "label": "Rain (Danger - Initial)",
+      "headline": "Rainy: High-risk vulnerabilities detected",
+      "description": "High or critical severity vulnerabilities (HIGH / CRITICAL) detected. Left unaddressed, conditions escalate to Thunderstorm in 3 days and Typhoon in 7 days.",
+      "subText": "{{days}} days elapsed since disclosure (Last scan: {{time}})"
     },
     "thunderstorm": {
       "label": "Thunderstorm (Emergency Warning)",
-      "headline": "Thunderstorm Warning! Critical vulnerabilities detected",
-      "description": "Contains severe vulnerabilities (CVSS 9.0+) allowing unauthenticated external attacks. Apply patches immediately!",
-      "subText": "Last scan: {{time}} (Urgent patch target)"
+      "headline": "Thunderstorm Warning! Critical vulnerabilities unaddressed for 3+ days",
+      "description": "Severe vulnerabilities (HIGH / CRITICAL) have remained unaddressed for {{days}} days. Apply patches immediately before escalation to Typhoon at 7 days!",
+      "subText": "{{days}} days elapsed (Last scan: {{time}})"
     },
     "typhoon": {
       "label": "Typhoon (Unresolved Alert)",
-      "headline": "Direct Typhoon Hit! Severe vulnerabilities left unpatched",
-      "description": "Severe vulnerabilities remain unaddressed for {{days}}+ days. Exploit code is circulating; consult your maintenance vendor immediately.",
-      "subText": "Fatal risk of damages and service interruption"
+      "headline": "Direct Typhoon Hit! Severe vulnerabilities left unpatched for 7+ days",
+      "description": "Severe vulnerabilities (HIGH / CRITICAL) remain unaddressed for {{days}}+ days. Exploit code is circulating; consult your maintenance vendor immediately.",
+      "subText": "{{days}} days elapsed • Fatal risk of service interruption"
     },
     "openPdfButton": "Export Consultation PDF Report",
     "advisorBadge": "Ready to share directly with your SE or contractor for advice"
@@ -91,9 +91,12 @@
       "sunny": "Clear skies, no anomalies",
       "cleanSystem": "Clear skies today: System in optimal health",
       "registered": "Registration complete: Clear skies",
+      "cloudyWarning": "Cloudy (Warning): Minor or moderate warnings present",
+      "rainInitial": "Rain (Danger): Severe vulnerability detected",
       "patchAlert": "Late night 23:00 Emergency patch released (CVSS 9.2)",
-      "stormAlert": "Heavy rain warning in effect: Urgent patch required",
+      "stormAlert": "Thunderstorm warning in effect: Urgent patch required",
       "daysElapsed": "Unaddressed: {{days}} days elapsed",
+      "thunderstormArrival": "Unaddressed: 3 days reached (Degraded to Thunderstorm)",
       "typhoonArrival": "Unaddressed: 7 days reached (Degraded to Typhoon)",
       "typhoonHit": "Direct typhoon hit: Consult your maintenance vendor immediately!",
       "uploadVulnerable": "Upload analysis: Emergency vulnerability detected!",
@@ -148,6 +151,7 @@
     "cveIdentifier": "CVE ID / CVSS",
     "recommendation": "Recommended Action / Safe Version",
     "statusDanger": "Danger ({{severity}})",
+    "statusWarning": "Warning ({{severity}})",
     "statusSafe": "Safe",
     "updateTo": "Update to {{version}}",
     "upToDate": "Up to date or patched",
