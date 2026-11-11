@@ -10,7 +10,8 @@ import {
   BookOpen,
   CheckCircle2,
   Share2,
-  History
+  History,
+  Bell
 } from 'lucide-react';
 import { PLAN_CONFIGS, type ProjectSite, type TeamMember, type PlanTier, type SiteMonitorShare } from '../types';
 import { SiteManagement } from './SiteManagement';
@@ -18,9 +19,10 @@ import { UserManagement } from './UserManagement';
 import { IntegrationGuideModal } from './IntegrationGuideModal';
 import { SiteSharesManagement } from './SiteSharesManagement';
 import { PluginHistoryManagement } from './PluginHistoryManagement';
+import { SiteNotificationManagement } from './SiteNotificationManagement';
 
 export type SettingsTab = 'sites' | 'users' | 'billing' | 'integrations';
-export type SiteSubTab = 'shares' | 'history';
+export type SiteSubTab = 'shares' | 'notifications' | 'history';
 
 interface SettingsLayoutProps {
   currentSite?: ProjectSite;
@@ -85,10 +87,6 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     if (activeTab !== 'sites') {
       handleSelectTab('sites');
     }
-  };
-
-  const handleBackToSitesList = () => {
-    setConfiguredSiteId(null);
   };
 
   const planConfig = PLAN_CONFIGS[currentPlan];
@@ -186,7 +184,21 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                   <span className="truncate">{t('shares.navItem')}</span>
                 </button>
 
-                {/* Submenu 2: Plugin History */}
+                {/* Submenu 2: Notification Settings */}
+                <button
+                  type="button"
+                  onClick={() => setSiteSubTab('notifications')}
+                  className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer text-left ${
+                    siteSubTab === 'notifications'
+                      ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/70 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Bell className={`w-3.5 h-3.5 ${siteSubTab === 'notifications' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                  <span className="truncate">{t('notifications.navItem')}</span>
+                </button>
+
+                {/* Submenu 3: Plugin History */}
                 <button
                   type="button"
                   onClick={() => setSiteSubTab('history')}
@@ -198,16 +210,6 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                 >
                   <History className={`w-3.5 h-3.5 ${siteSubTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`} />
                   <span className="truncate">{t('pluginHistory.navItem')}</span>
-                </button>
-
-                {/* Back to all sites link */}
-                <button
-                  type="button"
-                  onClick={handleBackToSitesList}
-                  className="flex items-center gap-1.5 w-full px-2.5 py-1 text-[11px] text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer text-left mt-1"
-                >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>{t('sites.backToSitesList')}</span>
                 </button>
               </div>
             )}
@@ -278,6 +280,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
                 onDeleteShare={onDeleteShare || (() => {})}
                 currentUserUid={currentUserUid}
               />
+            ) : siteSubTab === 'notifications' ? (
+              <SiteNotificationManagement site={configuredSite} />
             ) : (
               <PluginHistoryManagement site={configuredSite} />
             )
