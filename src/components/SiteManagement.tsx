@@ -115,7 +115,8 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
 
     try {
       // Attempt verification against backend API (or fallback for demo simulation)
-      const res = await fetch('http://localhost:8787/api/v1/verify', {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
+      const res = await fetch(`${apiBase}/api/v1/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

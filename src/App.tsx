@@ -26,7 +26,7 @@ const STORAGE_KEY_SITES = 'sbom_weather_user_sites_v2';
 const STORAGE_KEY_CURRENT_SITE = 'sbom_weather_user_current_site_id_v2';
 const STORAGE_KEY_PLAN = 'sbom_weather_plan_v1';
 const STORAGE_KEY_SHARES = 'sbom_weather_shares_v1';
-const API_BASE_URL = 'http://localhost:8787';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 const DEMO_SITE_IDS = new Set(INITIAL_PROJECTS.map((p) => p.id));
 
 const buildDefaultForecast = (weather: WeatherStatus = 'sunny', vulnCount: number = 0): DayForecast[] =>

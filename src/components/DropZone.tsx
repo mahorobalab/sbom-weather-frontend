@@ -169,21 +169,24 @@ export const DropZone: React.FC<DropZoneProps> = ({
         ecosystem
       };
 
-      // Backend API sync request (/api/v1/sync with fallback to localhost:8787)
+      // Backend API sync request (/api/v1/sync with fallback)
       try {
         let response: Response | null = null;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8787' : '');
         try {
-          response = await fetch('/api/v1/sync', {
+          response = await fetch(`${apiBase}/api/v1/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(syncPayload)
           });
         } catch {
-          response = await fetch('http://localhost:8787/api/v1/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(syncPayload)
-          });
+          if (!apiBase) {
+            response = await fetch('http://localhost:8787/api/v1/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(syncPayload)
+            });
+          }
         }
 
         if (response && response.ok) {
