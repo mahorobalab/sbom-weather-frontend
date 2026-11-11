@@ -64,6 +64,21 @@ export interface TeamMember {
   addedAt: string;
 }
 
+export interface SiteMonitorShare {
+  id: string;
+  siteId: string;
+  name: string;
+  token: string;
+  expiresAt: string | null; // ISO format or null for unlimited
+  pin: string; // 6-digit numeric PIN
+  pinMode: 'input' | 'url'; // 'input': visitor must enter PIN, 'url': included in query params
+  isOneTime: boolean; // Invalidates after first successful view
+  createdAt: string; // ISO format
+  viewCount: number;
+  lastViewedAt?: string | null;
+  isRevoked?: boolean;
+}
+
 export type PlanTier = 'free' | 'basic' | 'pro';
 
 export interface PlanConfig {

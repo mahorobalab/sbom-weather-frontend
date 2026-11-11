@@ -8,14 +8,19 @@ import {
   Puzzle,
   Sparkles,
   BookOpen,
-  CheckCircle2
+  CheckCircle2,
+  Share2,
+  History
 } from 'lucide-react';
-import { PLAN_CONFIGS, type ProjectSite, type TeamMember, type PlanTier } from '../types';
+import { PLAN_CONFIGS, type ProjectSite, type TeamMember, type PlanTier, type SiteMonitorShare } from '../types';
 import { SiteManagement } from './SiteManagement';
 import { UserManagement } from './UserManagement';
 import { IntegrationGuideModal } from './IntegrationGuideModal';
+import { SiteSharesManagement } from './SiteSharesManagement';
+import { PluginHistoryManagement } from './PluginHistoryManagement';
 
 export type SettingsTab = 'sites' | 'users' | 'billing' | 'integrations';
+export type SiteSubTab = 'shares' | 'history';
 
 interface SettingsLayoutProps {
   currentSite?: ProjectSite;
@@ -32,6 +37,11 @@ interface SettingsLayoutProps {
   onAddMember: (member: Partial<TeamMember>) => void;
   onRemoveMember: (id: string) => void;
   onOpenUpgradeModal: (reason: 'site_limit' | 'feature_locked' | null) => void;
+  // Site Monitor Shares
+  shares?: SiteMonitorShare[];
+  onAddShare?: (share: Omit<SiteMonitorShare, 'id' | 'createdAt' | 'viewCount'>) => void;
+  onDeleteShare?: (shareId: string) => void;
+  currentUserUid?: string;
 }
 
 export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
@@ -48,10 +58,16 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   onDeleteSite,
   onAddMember,
   onRemoveMember,
-  onOpenUpgradeModal
+  onOpenUpgradeModal,
+  shares = [],
+  onAddShare,
+  onDeleteShare,
+  currentUserUid
 }) => {
   const { t } = useTranslation();
   const [internalTab, setInternalTab] = useState<SettingsTab>('sites');
+  const [configuredSiteId, setConfiguredSiteId] = useState<string | null>(null);
+  const [siteSubTab, setSiteSubTab] = useState<SiteSubTab>('shares');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   const activeTab = propActiveTab || internalTab;
@@ -61,72 +77,222 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     onSelectTab?.(tab);
   };
 
+  const configuredSite = sites.find((s) => s.id === configuredSiteId) || null;
+
+  const handleConfigureSite = (site: ProjectSite) => {
+    setConfiguredSiteId(site.id);
+    setSiteSubTab('shares');
+    if (activeTab !== 'sites') {
+      handleSelectTab('sites');
+    }
+  };
+
+  const handleBackToSitesList = () => {
+    setConfiguredSiteId(null);
+  };
+
   const planConfig = PLAN_CONFIGS[currentPlan];
   const maxSites = planConfig.maxSites;
   const isSiteLimitReached = sites.length >= maxSites;
 
-  const navItems = [
-    { id: 'sites' as SettingsTab, label: t('settings.navSites'), icon: Server },
-    { id: 'users' as SettingsTab, label: t('settings.navUsers'), icon: Users },
-    { id: 'billing' as SettingsTab, label: t('settings.navBilling'), icon: CreditCard },
-    { id: 'integrations' as SettingsTab, label: t('settings.navIntegrations'), icon: Puzzle }
-  ];
+  // Filter shares for current configured site
+  const currentSiteShares = shares.filter((sh) => sh.siteId === configuredSiteId);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 items-start">
       {/* Cloudflare / Vercel style left navigation sidebar */}
       <aside className="w-full lg:w-64 shrink-0 bg-white rounded-2xl border border-slate-200/80 p-3 shadow-xs">
-        {/* Back to dashboard button */}
-        <button
-          onClick={onBackToDashboard}
-          className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/60 rounded-xl transition-all cursor-pointer mb-2"
+        {/* Back to dashboard link */}
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            onBackToDashboard();
+          }}
+          className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/60 rounded-xl transition-all cursor-pointer mb-2 no-underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>{t('settings.backToDashboard')}</span>
-        </button>
+        </a>
 
         <div className="px-3 pt-2 pb-2.5 border-t border-slate-100">
           <h2 className="text-sm font-extrabold text-slate-900 tracking-tight">{t('settings.title')}</h2>
           <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
-            {currentSite ? currentSite.name : t('sites.noSitesShort')}
+            {configuredSite
+              ? (configuredSite.nameKey ? t(configuredSite.nameKey as any) : configuredSite.name)
+              : currentSite
+              ? currentSite.name
+              : t('sites.noSitesShort')}
           </p>
         </div>
 
         {/* Sidebar Nav Items */}
         <nav className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleSelectTab(item.id)}
-                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-2xs border border-indigo-200/60'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+          {/* Site Management Parent Nav Item */}
+          <div>
+            <a
+              href="/config/sites"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSelectTab('sites');
+                if (configuredSite) {
+                  // If already inside configured site, clicking parent returns to all sites list
+                  setConfiguredSiteId(null);
+                }
+              }}
+              className={`flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer no-underline ${
+                activeTab === 'sites' && !configuredSite
+                  ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-2xs border border-indigo-200/60'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Server
+                  className={`w-4 h-4 ${
+                    activeTab === 'sites' && !configuredSite ? 'text-indigo-600' : 'text-slate-400'
+                  }`}
+                />
+                <span>{t('settings.navSites')}</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono px-1.5 py-0.5 rounded bg-slate-100">
+                {sites.length}
+              </span>
+            </a>
+
+            {/* Tree Branch when a site is selected for configuration */}
+            {configuredSite && activeTab === 'sites' && (
+              <div className="ml-3 pl-3 border-l-2 border-indigo-100 space-y-1 my-1.5 animate-in fade-in duration-150">
+                {/* Selected Site Label */}
+                <div className="px-2 py-1 text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                    <span className="truncate">
+                      {configuredSite.nameKey ? t(configuredSite.nameKey as any) : configuredSite.name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Submenu 1: Monitor View Publishing */}
+                <button
+                  type="button"
+                  onClick={() => setSiteSubTab('shares')}
+                  className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer text-left ${
+                    siteSubTab === 'shares'
+                      ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/70 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <Share2 className={`w-3.5 h-3.5 ${siteSubTab === 'shares' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                  <span className="truncate">{t('shares.navItem')}</span>
+                </button>
+
+                {/* Submenu 2: Plugin History */}
+                <button
+                  type="button"
+                  onClick={() => setSiteSubTab('history')}
+                  className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer text-left ${
+                    siteSubTab === 'history'
+                      ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/70 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <History className={`w-3.5 h-3.5 ${siteSubTab === 'history' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                  <span className="truncate">{t('pluginHistory.navItem')}</span>
+                </button>
+
+                {/* Back to all sites link */}
+                <button
+                  type="button"
+                  onClick={handleBackToSitesList}
+                  className="flex items-center gap-1.5 w-full px-2.5 py-1 text-[11px] text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer text-left mt-1"
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                  <span>{t('sites.backToSitesList')}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Team & Members */}
+          <a
+            href="/config/users"
+            onClick={(e) => {
+              e.preventDefault();
+              handleSelectTab('users');
+            }}
+            className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer no-underline ${
+              activeTab === 'users'
+                ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-2xs border border-indigo-200/60'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Users className={`w-4 h-4 ${activeTab === 'users' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span>{t('settings.navUsers')}</span>
+          </a>
+
+          {/* Billing & Plans */}
+          <a
+            href="/config/billing"
+            onClick={(e) => {
+              e.preventDefault();
+              handleSelectTab('billing');
+            }}
+            className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer no-underline ${
+              activeTab === 'billing'
+                ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-2xs border border-indigo-200/60'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <CreditCard className={`w-4 h-4 ${activeTab === 'billing' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span>{t('settings.navBilling')}</span>
+          </a>
+
+          {/* Integrations */}
+          <a
+            href="/config/integrations"
+            onClick={(e) => {
+              e.preventDefault();
+              handleSelectTab('integrations');
+            }}
+            className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer no-underline ${
+              activeTab === 'integrations'
+                ? 'bg-indigo-50/80 text-indigo-700 font-semibold shadow-2xs border border-indigo-200/60'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Puzzle className={`w-4 h-4 ${activeTab === 'integrations' ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span>{t('settings.navIntegrations')}</span>
+          </a>
         </nav>
       </aside>
 
       {/* Main content pane */}
       <div className="flex-1 w-full min-w-0">
         {activeTab === 'sites' && (
-          <SiteManagement
-            sites={sites}
-            onAddSite={onAddSite}
-            onVerifySite={onVerifySite}
-            onRenameSite={onRenameSite}
-            onDeleteSite={onDeleteSite}
-            currentPlan={currentPlan}
-            onOpenUpgradeModal={onOpenUpgradeModal}
-          />
+          configuredSite ? (
+            siteSubTab === 'shares' ? (
+              <SiteSharesManagement
+                site={configuredSite}
+                shares={currentSiteShares}
+                onAddShare={onAddShare || (() => {})}
+                onDeleteShare={onDeleteShare || (() => {})}
+                currentUserUid={currentUserUid}
+              />
+            ) : (
+              <PluginHistoryManagement site={configuredSite} />
+            )
+          ) : (
+            <SiteManagement
+              sites={sites}
+              onAddSite={onAddSite}
+              onVerifySite={onVerifySite}
+              onRenameSite={onRenameSite}
+              onDeleteSite={onDeleteSite}
+              onConfigureSite={handleConfigureSite}
+              currentPlan={currentPlan}
+              onOpenUpgradeModal={onOpenUpgradeModal}
+            />
+          )
         )}
 
         {activeTab === 'users' && (

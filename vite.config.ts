@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
+// Reload trigger for i18n JSON cache update
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {

@@ -9,6 +9,7 @@ import { SettingsLayout, type SettingsTab } from './components/SettingsLayout';
 import { PdfReportModal } from './components/PdfReportModal';
 import { PricingModal } from './components/PricingModal';
 import { LoginModal, GoogleIcon, MicrosoftIcon } from './components/LoginModal';
+import { SharePinLockScreen } from './components/SharePinLockScreen';
 import {
   INITIAL_PROJECTS,
   INITIAL_MEMBERS,
@@ -18,12 +19,13 @@ import {
   calculateMaxDaysUnresolved
 } from './mockData';
 import { useAuth } from './contexts/AuthContext';
-import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier, DayForecast } from './types';
-import { RefreshCw, Eye, Globe, Plus, Zap, RotateCcw } from 'lucide-react';
+import type { ProjectSite, TeamMember, Dependency, WeatherStatus, PlanTier, DayForecast, SiteMonitorShare } from './types';
+import { RefreshCw, Eye, Globe, Plus, Zap, RotateCcw, Lock, ShieldCheck, X } from 'lucide-react';
 
 const STORAGE_KEY_SITES = 'sbom_weather_user_sites_v2';
 const STORAGE_KEY_CURRENT_SITE = 'sbom_weather_user_current_site_id_v2';
 const STORAGE_KEY_PLAN = 'sbom_weather_plan_v1';
+const STORAGE_KEY_SHARES = 'sbom_weather_shares_v1';
 const API_BASE_URL = 'http://localhost:8787';
 const DEMO_SITE_IDS = new Set(INITIAL_PROJECTS.map((p) => p.id));
 
@@ -109,10 +111,19 @@ const parseUrlPath = (): { view: 'dashboard' | 'settings'; tab: SettingsTab } =>
   return { view: 'dashboard', tab: 'sites' };
 };
 
+const parseShareParams = (): { token: string | null; pin: string | null } => {
+  if (typeof window === 'undefined') return { token: null, pin: null };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    token: params.get('view'),
+    pin: params.get('pin')
+  };
+};
+
 export default function App() {
   const { t } = useTranslation();
-  const { currentUser, signInWithGoogle, signInWithMicrosoft } = useAuth();
-  const isDemoMode = !currentUser;
+  const { currentUser, loading: authLoading, signInWithGoogle, signInWithMicrosoft } = useAuth();
+  const isDemoMode = !currentUser && !authLoading;
 
   // Authenticated user's sites and selected site ID (strictly isolated per UID, never mixed with Demo sites)
   const [userSites, setUserSites] = useState<ProjectSite[]>([]);
@@ -150,6 +161,119 @@ export default function App() {
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
   const [upgradeReason, setUpgradeReason] = useState<'site_limit' | 'feature_locked' | null>(null);
 
+  // Monitor Shares state & handlers (persisted to localStorage)
+  const [shares, setShares] = useState<SiteMonitorShare[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY_SHARES);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore read error
+    }
+    return [];
+  });
+
+  const handleAddShare = useCallback(
+    (shareData: Omit<SiteMonitorShare, 'id' | 'createdAt' | 'viewCount'>) => {
+      const newShare: SiteMonitorShare = {
+        ...shareData,
+        id: `sh_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+        createdAt: new Date().toISOString(),
+        viewCount: 0
+      };
+      setShares((prev) => {
+        const updated = [newShare, ...prev];
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(STORAGE_KEY_SHARES, JSON.stringify(updated));
+        }
+        return updated;
+      });
+    },
+    []
+  );
+
+  const handleDeleteShare = useCallback((shareId: string) => {
+    setShares((prev) => {
+      const updated = prev.filter((s) => s.id !== shareId);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY_SHARES, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
+
+  // Monitor Share link authentication & view state
+  const [activeShareToken, setActiveShareToken] = useState<string | null>(() => parseShareParams().token);
+  const [urlPin, setUrlPin] = useState<string | null>(() => parseShareParams().pin);
+  const [isShareUnlocked, setIsShareUnlocked] = useState<boolean>(false);
+
+  // Sync token from URL popstate / address bar changes
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const { token, pin } = parseShareParams();
+      setActiveShareToken(token);
+      setUrlPin(pin);
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
+
+  const currentShare = activeShareToken
+    ? shares.find((s) => s.token === activeShareToken) || null
+    : null;
+
+  const handleRecordOneTimeUsage = useCallback((shareId: string) => {
+    setShares((prev) => {
+      const updated = prev.map((s) =>
+        s.id === shareId
+          ? { ...s, viewCount: s.viewCount + 1, isRevoked: s.isOneTime ? true : s.isRevoked }
+          : s
+      );
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY_SHARES, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  }, []);
+
+  // Auto-unlock if URL contains the correct PIN
+  useEffect(() => {
+    if (!activeShareToken || !currentShare) return;
+    if (currentShare.expiresAt && new Date(currentShare.expiresAt).getTime() < Date.now()) return;
+    if (currentShare.isOneTime && (currentShare.viewCount > 0 || currentShare.isRevoked)) return;
+
+    if (urlPin && urlPin === currentShare.pin) {
+      setIsShareUnlocked(true);
+      if (currentShare.isOneTime) {
+        handleRecordOneTimeUsage(currentShare.id);
+      }
+    }
+  }, [activeShareToken, currentShare, urlPin, handleRecordOneTimeUsage]);
+
+  const handleUnlockShare = useCallback((inputPin: string): boolean => {
+    if (!currentShare) return false;
+    if (inputPin.trim() === currentShare.pin) {
+      setIsShareUnlocked(true);
+      if (currentShare.isOneTime) {
+        handleRecordOneTimeUsage(currentShare.id);
+      }
+      return true;
+    }
+    return false;
+  }, [currentShare, handleRecordOneTimeUsage]);
+
+  const handleExitShareMode = useCallback(() => {
+    setActiveShareToken(null);
+    setUrlPin(null);
+    setIsShareUnlocked(false);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const buildUserHeaders = useCallback((): Record<string, string> => {
     if (!currentUser) return {};
     const primaryEmail = currentUser.email || currentUser.providerData?.[0]?.email || '';
@@ -163,8 +287,10 @@ export default function App() {
     };
   }, [currentUser]);
 
-  // Load cached user sites when currentUser changes, or reset on logout
+  // Load cached user sites when currentUser changes, or reset on logout (wait for authLoading to finish first)
   useEffect(() => {
+    if (authLoading) return;
+
     if (!currentUser) {
       setUserSites([]);
       setUserSiteId('');
@@ -172,16 +298,27 @@ export default function App() {
       if (currentView === 'settings') {
         setCurrentView('dashboard');
         if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-          window.history.pushState({ view: 'dashboard', tab: settingsTab }, '', '/');
+          window.history.replaceState({ view: 'dashboard', tab: settingsTab }, '', '/');
         }
       }
       return;
     }
 
+    // Ensure URL route (/config/sites, /config/users, /config/billing, /config/integrations) stays active on reload
+    const parsedRoute = parseUrlPath();
+    if (parsedRoute.view === 'settings') {
+      setCurrentView('settings');
+      setSettingsTab(parsedRoute.tab);
+      const canonicalPath = `/config/${parsedRoute.tab}`;
+      if (typeof window !== 'undefined' && window.location.pathname !== canonicalPath) {
+        window.history.replaceState({ view: 'settings', tab: parsedRoute.tab }, '', canonicalPath);
+      }
+    }
+
     const cachedSites = loadUserSitesFromStorage(currentUser.uid);
     setUserSites(cachedSites);
     setUserSiteId(loadUserSiteIdFromStorage(currentUser.uid, cachedSites));
-  }, [currentUser, currentView, settingsTab]);
+  }, [currentUser, authLoading]);
 
   // Persist userSites to user-scoped localStorage whenever updated
   useEffect(() => {
@@ -355,8 +492,30 @@ export default function App() {
       setUserSiteId(id);
     }
   };
+
+  const sharedSite = currentShare
+    ? [...userSites, ...demoSites].find((s) => s.id === currentShare.siteId) || null
+    : null;
+
   const currentSite: ProjectSite | undefined =
-    instantSite || baseSites.find((s) => s.id === activeSiteId) || baseSites[0];
+    (activeShareToken && sharedSite)
+      ? sharedSite
+      : instantSite || baseSites.find((s) => s.id === activeSiteId) || baseSites[0];
+
+  const shareStatus: 'locked' | 'expired' | 'used' | 'not_found' | 'unlocked' = (() => {
+    if (!activeShareToken) return 'unlocked';
+    if (!currentShare) return 'not_found';
+    if (currentShare.expiresAt && new Date(currentShare.expiresAt).getTime() < Date.now()) {
+      return 'expired';
+    }
+    if (currentShare.isOneTime && (currentShare.viewCount > 0 || currentShare.isRevoked)) {
+      return 'used';
+    }
+    if (isShareUnlocked) {
+      return 'unlocked';
+    }
+    return 'locked';
+  })();
 
   // Handler invoked when a file or WP Site Health text is parsed through the Instant Diagnosis modal
   const handleFileParsed = (
@@ -565,10 +724,58 @@ export default function App() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-8">
-        {currentView === 'dashboard' ? (
+        {/* If visiting a shared monitor URL that is locked, expired, or used */}
+        {activeShareToken && shareStatus !== 'unlocked' ? (
+          <SharePinLockScreen
+            status={shareStatus}
+            share={currentShare}
+            site={sharedSite}
+            onUnlock={handleUnlockShare}
+            onGoHome={handleExitShareMode}
+          />
+        ) : currentView === 'dashboard' ? (
           <>
-            {/* Logged-out Demo Mode / Instant Diagnosis Mode Banner */}
-            {(isDemoMode || isInstantMode) && (
+            {/* Public Share View Header Banner (Unlocked Mode) */}
+            {activeShareToken && isShareUnlocked && (
+              <div className="rounded-2xl p-4 sm:px-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-indigo-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black tracking-tight text-white flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span>{t('shareLock.publicShareBadge')}</span>
+                      </span>
+                      {currentShare?.name && (
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 font-mono font-bold">
+                          {currentShare.name}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      {currentShare?.expiresAt
+                        ? `${t('shares.colExpiry')}: ${new Date(currentShare.expiresAt).toLocaleDateString()}`
+                        : `${t('shares.colExpiry')}: ${t('shares.unlimitedExpiry')}`}
+                      {currentShare?.isOneTime && ` • ${t('shares.oneTimeBadge')}`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExitShareMode}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold border border-white/20 transition-all cursor-pointer self-start sm:self-auto"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>{t('shareLock.exitShareView')}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Logged-out Demo Mode / Instant Diagnosis Mode Banner (hidden in Public Share Mode) */}
+            {!activeShareToken && (isDemoMode || isInstantMode) && (
               <div
                 className={`rounded-2xl p-4 sm:px-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs border ${
                   isInstantMode
@@ -631,28 +838,30 @@ export default function App() {
                 {/* Top Bar for Project Context */}
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-slate-200">
                   <div>
-                    {/* Instant Diagnosis Trigger & Reset to Demo Buttons above Project Heading */}
-                    <div className="flex items-center gap-2.5 flex-wrap mb-2.5">
-                      <button
-                        type="button"
-                        onClick={() => setIsDiagnosisModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>{isDemoMode ? t('demo.instantBtn') : t('demo.instantBtnAuth')}</span>
-                      </button>
-
-                      {isInstantMode && (
+                    {/* Instant Diagnosis Trigger & Reset to Demo Buttons (hidden in public share view) */}
+                    {!activeShareToken && (
+                      <div className="flex items-center gap-2.5 flex-wrap mb-2.5">
                         <button
                           type="button"
-                          onClick={() => setIsResetDemoConfirmOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-900 border border-slate-300 hover:border-amber-300 text-xs font-bold shadow-2xs transition-all active:scale-98 cursor-pointer"
+                          onClick={() => setIsDiagnosisModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-98 cursor-pointer"
                         >
-                          <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
-                          <span>{t('demo.resetToDemoBtn')}</span>
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>{isDemoMode ? t('demo.instantBtn') : t('demo.instantBtnAuth')}</span>
                         </button>
-                      )}
-                    </div>
+
+                        {isInstantMode && (
+                          <button
+                            type="button"
+                            onClick={() => setIsResetDemoConfirmOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-900 border border-slate-300 hover:border-amber-300 text-xs font-bold shadow-2xs transition-all active:scale-98 cursor-pointer"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+                            <span>{t('demo.resetToDemoBtn')}</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h1 className="text-2xl font-black tracking-tight text-slate-900 m-0">
@@ -686,16 +895,18 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={handleRefreshScan}
-                      disabled={isScanning}
-                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
-                      <span>{isScanning ? t('dashboard.scanning') : t('dashboard.refreshScan')}</span>
-                    </button>
-                  </div>
+                  {!activeShareToken && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleRefreshScan}
+                        disabled={isScanning}
+                        className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${isScanning ? 'animate-spin' : ''}`} />
+                        <span>{isScanning ? t('dashboard.scanning') : t('dashboard.refreshScan')}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 1. Main Weather Banner (Weather Metaphor) */}
@@ -771,6 +982,10 @@ export default function App() {
             onAddMember={handleAddMember}
             onRemoveMember={handleRemoveMember}
             onOpenUpgradeModal={handleOpenUpgradeModal}
+            shares={shares}
+            onAddShare={handleAddShare}
+            onDeleteShare={handleDeleteShare}
+            currentUserUid={currentUser?.uid}
           />
         )}
       </main>

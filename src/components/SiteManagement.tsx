@@ -13,7 +13,8 @@ import {
   Trash2,
   Lock,
   X,
-  CalendarClock
+  CalendarClock,
+  Settings
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PLAN_CONFIGS, type ProjectSite, type PlanTier } from '../types';
@@ -25,6 +26,7 @@ interface SiteManagementProps {
   onVerifySite?: (siteId: string) => void;
   onRenameSite?: (siteId: string, newName: string) => void;
   onDeleteSite?: (siteId: string) => void;
+  onConfigureSite?: (site: ProjectSite) => void;
   currentPlan?: PlanTier;
   onOpenUpgradeModal?: (reason: 'site_limit' | null) => void;
 }
@@ -35,6 +37,7 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
   onVerifySite,
   onRenameSite,
   onDeleteSite,
+  onConfigureSite,
   currentPlan = 'free',
   onOpenUpgradeModal
 }) => {
@@ -402,6 +405,18 @@ export const SiteManagement: React.FC<SiteManagementProps> = ({
 
               {/* Actions Area */}
               <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                {onConfigureSite && (
+                  <button
+                    type="button"
+                    onClick={() => onConfigureSite(site)}
+                    title={t('sites.configureSiteTitle')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 text-xs font-semibold border border-slate-200/80 hover:border-indigo-200 transition-colors cursor-pointer"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-600" />
+                    <span>{t('sites.configureSite')}</span>
+                  </button>
+                )}
+
                 {site.isVerified ? (
                   /* Verified: View Integration Guide */
                   <button
